@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Zap } from 'lucide-react';
-import { PricelistItem, fetchPricelist } from '../../lib/content';
+import { PricelistItem, fetchPricelist } from '@/lib/unelma';
 
 const PriceList = () => {
     const [prices, setPrices] = useState<PricelistItem[]>([]);

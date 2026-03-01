@@ -104,7 +104,7 @@ export default function LoginPage() {
                                 />
                             </div>
                             <div className="text-right mt-3">
-                                <Link href="#" className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-accent transition-colors italic">
+                                <Link href="/login/reset" className="text-[10px] font-black text-primary uppercase tracking-widest hover:text-accent transition-colors italic">
                                     Forgot Password?
                                 </Link>
                             </div>
@@ -126,7 +126,7 @@ export default function LoginPage() {
                     <div className="mt-10 pt-10 border-t border-slate-50 text-center">
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest italic">
                             New Institution?{' '}
-                            <Link href="/(auth)/register" className="text-primary font-black hover:text-accent transition-colors px-1 underline underline-offset-4">
+                            <Link href="/register" className="text-primary font-black hover:text-accent transition-colors px-1 underline underline-offset-4">
                                 Register Here
                             </Link>
                         </p>

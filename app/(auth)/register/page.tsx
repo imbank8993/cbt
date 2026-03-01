@@ -85,7 +85,7 @@ export default function RegisterPage() {
                     <div className="mt-8 pt-8 border-t border-slate-700/50 text-center">
                         <p className="text-slate-400 text-sm">
                             Sudah punya akun?{' '}
-                            <Link href="/(auth)/login" className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
+                            <Link href="/login" className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
                                 Masuk di sini
                             </Link>
                         </p>

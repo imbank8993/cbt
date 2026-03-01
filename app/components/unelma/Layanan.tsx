@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart } from 'lucide-react';
-import { LayananItem, fetchLayanan, getIcon } from '../../lib/content';
+import { LayananItem, fetchLayanan, getIcon } from '@/lib/unelma';
 
 const Layanan = () => {
     const [layanan, setLayanan] = useState<LayananItem[]>([]);
