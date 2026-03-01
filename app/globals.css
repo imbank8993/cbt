@@ -35,7 +35,11 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
   --color-accent: var(--accent);
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-unelma-navy: #030c4d;
+  --color-unelma-orange: #f8a01b;
+  --color-unelma-orange-light: #ffb84d;
+  --color-unelma-navy-light: #0a1a6e;
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 body {
@@ -43,6 +47,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-15px) translateX(8px); }
+  100% { transform: translateY(0px) translateX(0px); }
+}
+
+@keyframes pulse-warm {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.1); }
 }
 
 /* Custom Utilities */
@@ -87,6 +103,19 @@ body {
 
 .shadow-premium {
   box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.1);
+}
+
+.btn-unelma {
+  background: #f8a01b;
+  color: #030c4d;
+  font-weight: 700;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-unelma:hover {
+  background: #ffb84d;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(248, 160, 27, 0.4);
 }
 
 /* Custom Scrollbar */

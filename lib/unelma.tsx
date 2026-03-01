@@ -26,18 +26,18 @@ export interface PricelistItem {
     is_popular: boolean;
 }
 
-// Helper untuk mendapatkan Icon berdasarkan nama
+// Helper to get Icon by name
 export const getIcon = (name: string, size = 28) => {
     switch (name) {
-        case 'BookOpen': return <BookOpen className="text-indigo-500" size={size} />;
-        case 'Users': return <Users className="text-indigo-500" size={size} />;
-        case 'Star': return <Star className="text-indigo-500" size={size} />;
-        case 'MessageCircle': return <MessageCircle className="text-indigo-500" size={size} />;
-        default: return <BookOpen className="text-indigo-500" size={size} />;
+        case 'BookOpen': return <BookOpen className="text-unelma-orange" size={size} />;
+        case 'Users': return <Users className="text-unelma-orange" size={size} />;
+        case 'Star': return <Star className="text-unelma-orange" size={size} />;
+        case 'MessageCircle': return <MessageCircle className="text-unelma-orange" size={size} />;
+        default: return <BookOpen className="text-unelma-orange" size={size} />;
     }
 };
 
-// --- CRUD LAYANAN ---
+// --- LAYANAN CRUD ---
 
 export const fetchLayanan = async () => {
     const { data, error } = await supabase
@@ -69,7 +69,7 @@ export const deleteLayanan = async (id: string) => {
     if (error) throw error;
 };
 
-// --- CRUD TESTIMONI ---
+// --- TESTIMONI CRUD ---
 
 export const fetchTestimoni = async () => {
     const { data, error } = await supabase
@@ -78,18 +78,13 @@ export const fetchTestimoni = async () => {
         .order('created_at', { ascending: true });
 
     if (error) {
-        console.error('Error fetching Testimoni detail:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint
-        });
+        console.error('Error fetching Testimoni:', error);
         return [];
     }
     return data as TestimoniItem[];
 };
 
-// --- CRUD PRICELIST ---
+// --- PRICELIST CRUD ---
 
 export const fetchPricelist = async () => {
     const { data, error } = await supabase
@@ -98,12 +93,7 @@ export const fetchPricelist = async () => {
         .order('price', { ascending: true });
 
     if (error) {
-        console.error('Error fetching Pricelist detail:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint
-        });
+        console.error('Error fetching Pricelist:', error);
         return [];
     }
     return data as PricelistItem[];
