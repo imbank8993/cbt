@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Custom test and scratch files
+test_*.mjs
+test_*.js
+tmp_*.js
+*.sql
+!database/schema.sql
+simulate_*.js
+list_*.js
+check_*.js
+debug_*.js
+*.log
+scripts/test-parser.js
+scripts/generate-template.js
+scripts/generate-template.mjs
+lib/doc-parser-node.js

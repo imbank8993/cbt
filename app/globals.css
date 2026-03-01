@@ -1,26 +1,191 @@
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fbff;
+  --foreground: #030c4d;
+  --card: #ffffff;
+  --card-foreground: #030c4d;
+
+  /* Unelma Brand Palette - Official */
+  --primary: #030c4d;
+  /* Unelma Navy */
+  --primary-foreground: #ffffff;
+  --primary-light: #0a1a6e;
+
+  --secondary: #f1f5f9;
+  --secondary-foreground: #475569;
+
+  --accent: #f8a01b;
+  /* Unelma Orange */
+  --accent-foreground: #030c4d;
+
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #030c4d;
+
+  --radius: 1.25rem;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Custom Utilities */
+.glass-white {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-warm {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 40px -15px rgba(3, 12, 77, 0.1);
+}
+
+.gaussian-blur {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.blur-navy-white {
+  background: radial-gradient(circle, rgba(3, 12, 77, 0.1) 0%, rgba(255, 255, 255, 0.6) 100%);
+}
+
+.blur-orange-white {
+  background: radial-gradient(circle, rgba(248, 160, 27, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+}
+
+.noise-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  opacity: 0.02;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.shadow-premium {
+  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Rich Content Styles (Word-style) */
+.rich-content p {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.rich-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-content strong {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.rich-content em {
+  font-style: italic;
+}
+
+/* Professional Table Styles */
+.rich-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.rich-content table th,
+.rich-content table td {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.rich-content table th {
+  background: #f8fbff;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  font-size: 0.75rem;
+}
+
+.rich-content table tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.rich-content table tr:hover {
+  background: #f1f5f9;
+}
+
+.rich-content ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-content li {
+  margin-bottom: 0.35rem;
+}
+
+.rich-content h1,
+.rich-content h2,
+.rich-content h3 {
+  font-weight: 800;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+  color: var(--primary);
+  line-height: 1.2;
 }
