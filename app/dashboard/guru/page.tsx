@@ -16,33 +16,33 @@ export default function GuruDashboard() {
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
             {/* Header Section */}
-            <header className="relative p-10 md:p-14 overflow-hidden rounded-[3rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-2xl shadow-primary/20">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-accent opacity-10 blur-[100px] -mr-32 -mt-32 rounded-full"></div>
-                <div className="absolute bottom-0 left-0 w-72 h-72 bg-white opacity-5 blur-[80px] -ml-20 -mb-20 rounded-full"></div>
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-xl shadow-primary/10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 blur-[60px] -ml-16 -mb-16 rounded-full"></div>
 
-                <div className="relative flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="text-center md:text-left">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest mb-6"
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4"
                         >
-                            <Library size={12} className="text-accent" /> Assessment Center
+                            <Library size={10} className="text-accent" /> Unelma CBT System
                         </motion.div>
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 uppercase italic">
-                            Teacher <span className="text-accent">Workspace</span>
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase text-white">
+                            Guru <span className="text-accent">Panel</span>
                         </h1>
-                        <p className="text-white/60 font-bold max-w-md italic text-lg">
-                            Pusat Pengelolaan Bank Soal & Aktivitas Penilaian Kelas Anda.
+                        <p className="text-white/60 font-bold max-w-sm text-sm">
+                            Kelola Bank Soal & Aktivitas Penilaian Anda.
                         </p>
                     </div>
 
-                    <div className="flex gap-4">
-                        <button onClick={() => router.push('/dashboard/guru/questions')} className="bg-white/10 hover:bg-white/20 text-white font-black px-8 py-5 rounded-2xl border border-white/10 transition-all text-[10px] uppercase tracking-widest flex items-center gap-2 backdrop-blur-md">
-                            <BookOpen size={16} className="text-accent" /> Statistik Bank
+                    <div className="flex gap-3">
+                        <button onClick={() => router.push('/dashboard/guru/questions')} className="bg-white/10 hover:bg-white/20 text-white font-black px-6 py-4 rounded-xl border border-white/10 transition-all text-[9px] uppercase tracking-widest flex items-center gap-2 backdrop-blur-md">
+                            <BookOpen size={14} className="text-accent" /> Statistik
                         </button>
-                        <button onClick={() => router.push('/dashboard/guru/questions?action=new')} className="bg-accent hover:bg-orange-500 text-white font-black px-8 py-5 rounded-2xl shadow-xl shadow-accent/20 transition-all flex items-center gap-3 text-[10px] uppercase tracking-widest">
-                            <FilePlus size={16} /> Buat Bank Soal
+                        <button onClick={() => router.push('/dashboard/guru/questions?action=new')} className="bg-accent hover:bg-orange-500 text-white font-black px-6 py-4 rounded-xl shadow-lg transition-all flex items-center gap-2 text-[9px] uppercase tracking-widest">
+                            <FilePlus size={14} /> Buat Bank Soal
                         </button>
                     </div>
                 </div>
@@ -83,10 +83,10 @@ export default function GuruDashboard() {
                                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-sm ${bank.color}`}>
                                         <BookOpen size={24} />
                                     </div>
-                                    <span className="bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-500 px-4 py-1.5 rounded-full uppercase tracking-[0.2em] italic">{bank.type}</span>
+                                    <span className="bg-slate-50 border border-slate-100 text-[9px] font-black text-slate-500 px-4 py-1.5 rounded-full uppercase tracking-[0.2em]">{bank.type}</span>
                                 </div>
-                                <h3 className="text-xl font-black text-primary mb-2 leading-tight uppercase italic group-hover:text-accent transition-colors">{bank.title}</h3>
-                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest italic pt-4 mt-4 border-t border-slate-50">
+                                <h3 className="text-xl font-black text-primary mb-2 leading-tight uppercase group-hover:text-accent transition-colors">{bank.title}</h3>
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest pt-4 mt-4 border-t border-slate-50">
                                     <CheckCircle2 size={16} className={bank.color === 'bg-accent' ? 'text-primary' : 'text-accent'} /> {bank.count} Item Terverifikasi
                                 </div>
                             </motion.div>
@@ -99,19 +99,12 @@ export default function GuruDashboard() {
                     <div className="bg-primary border border-primary-light rounded-[3rem] p-10 shadow-2xl shadow-primary/20 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
                         <h4 className="text-accent font-black uppercase tracking-[0.2em] text-[9px] mb-6 flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-accent animate-ping"></div> ACTION REQUIRED</h4>
-                        <p className="text-white font-black text-xl leading-snug mb-8 uppercase italic">Terdapat 12 jawaban essay ujian yang menunggu hasil penilaian Anda.</p>
-                        <button onClick={() => router.push('/dashboard/guru/grading')} className="w-full bg-white text-primary hover:bg-accent hover:text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg italic">
+                        <p className="text-white font-black text-xl leading-snug mb-8 uppercase">Terdapat 12 jawaban essay ujian yang menunggu hasil penilaian Anda.</p>
+                        <button onClick={() => router.push('/dashboard/guru/grading')} className="w-full bg-white text-primary hover:bg-accent hover:text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg">
                             Mulai Menilai
                         </button>
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-200 rounded-[3rem] p-10 relative overflow-hidden group">
-                        <h4 className="text-slate-400 font-black uppercase tracking-[0.2em] text-[9px] mb-6 italic">Support Center</h4>
-                        <p className="text-primary font-black text-base mb-6 italic uppercase leading-tight">Butuh bantuan membuat soal berstandar CBT rasional?</p>
-                        <button onClick={() => window.open('https://unelma.co.id/support', '_blank')} className="text-accent font-black text-[10px] uppercase tracking-widest flex items-center gap-2 hover:gap-4 transition-all italic">
-                            Akses Panduan <ArrowRight size={14} />
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

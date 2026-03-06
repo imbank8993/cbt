@@ -115,3 +115,43 @@ export const deletePricelist = async (id: string) => {
     const { error } = await supabase.from('unelma_pricelist').delete().eq('id', id);
     if (error) throw error;
 };
+
+// --- PRODUK CRUD ---
+
+export interface ProdukItem {
+    id: string;
+    name: string;
+    description: string;
+    image_url: string;
+    price: number;
+}
+
+export const fetchProduk = async () => {
+    const { data, error } = await supabase
+        .from('unelma_produk')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error('Error fetching Produk:', error);
+        return [];
+    }
+    return data as ProdukItem[];
+};
+
+export const saveProduk = async (item: Omit<ProdukItem, 'id'>) => {
+    const { data, error } = await supabase.from('unelma_produk').insert([item]).select();
+    if (error) throw error;
+    return data[0] as ProdukItem;
+};
+
+export const updateProduk = async (id: string, item: Partial<ProdukItem>) => {
+    const { data, error } = await supabase.from('unelma_produk').update(item).eq('id', id).select();
+    if (error) throw error;
+    return data[0] as ProdukItem;
+};
+
+export const deleteProduk = async (id: string) => {
+    const { error } = await supabase.from('unelma_produk').delete().eq('id', id);
+    if (error) throw error;
+};

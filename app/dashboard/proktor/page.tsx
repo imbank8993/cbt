@@ -10,7 +10,9 @@ import {
     Activity,
     ArrowUpRight,
     TrendingUp,
-    Shield
+    Shield,
+    Database,
+    CheckCircle2
 } from 'lucide-react';
 import { getProctorOrganization, getOrganizationStats, listOrganizationExams } from '@/app/actions/proktor';
 import { supabase } from '@/lib/supabase';
@@ -19,7 +21,13 @@ import { useRouter } from 'next/navigation';
 export default function ProktorDashboard() {
     const router = useRouter();
     const [org, setOrg] = useState<any>(null);
-    const [stats, setStats] = useState({ totalMembers: 0, totalExams: 0, activeAttempts: 0 });
+    const [stats, setStats] = useState({
+        totalMembers: 0,
+        totalBanks: 0,
+        ongoingExams: 0,
+        upcomingExams: 0,
+        finishedExams: 0
+    });
     const [exams, setExams] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -36,12 +44,24 @@ export default function ProktorDashboard() {
                     ]);
                     setStats(statData);
                     setExams(examData);
+                } else {
+                    // Jika tidak ada organisasi aktif (misal Platform Admin belum memilih)
+                    // Redirect kembali ke Orgs Management
+                    router.push('/dashboard/admin/orgs');
                 }
             }
             setLoading(false);
         };
         loadInitialData();
     }, []);
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 11) return "Selamat Pagi";
+        if (hour < 15) return "Selamat Siang";
+        if (hour < 18) return "Selamat Sore";
+        return "Selamat Malam";
+    };
 
     if (loading) {
         return (
@@ -59,94 +79,83 @@ export default function ProktorDashboard() {
     return (
         <div className="max-w-[1400px] mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Header Section */}
-            <header className="relative p-10 md:p-14 overflow-hidden rounded-[3rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-2xl shadow-primary/20">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-accent opacity-10 blur-[100px] -mr-32 -mt-32 rounded-full"></div>
-                <div className="absolute bottom-0 left-0 w-72 h-72 bg-white opacity-5 blur-[80px] -ml-20 -mb-20 rounded-full"></div>
+            <header className="relative p-10 md:p-14 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-unelma-navy via-primary-light to-[#051163] text-white shadow-2xl shadow-primary/20">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/10 blur-[120px] -mr-40 -mt-40 rounded-full animate-pulse-warm"></div>
+                <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-white/5 blur-[80px] rounded-full"></div>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, white 1px, transparent 0)`, backgroundSize: '40px 40px' }}></div>
 
-                <div className="relative flex flex-col md:flex-row justify-between items-center gap-10">
-                    <div className="text-center md:text-left">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest mb-6"
-                        >
-                            <Shield size={12} className="text-accent" /> Secured by Unelma Gate
-                        </motion.div>
-                        <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-4 uppercase italic">
-                            Academy <span className="text-accent">Control</span>
-                        </h1>
-                        <p className="text-white/60 font-bold max-w-md italic text-lg">
-                            {org?.name || 'Sekolah'} — Institutional Oversight & Assessment Hub.
-                        </p>
-                    </div>
+                <div className="relative flex flex-col lg:flex-row justify-between items-start lg:items-center gap-10">
+                    <div className="max-w-2xl">
+                        <div className="space-y-1">
+                            <h1 className="text-xl md:text-2xl font-medium text-white/80 tracking-tight">
+                                Selamat Datang di Dashboard,
+                            </h1>
+                            <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase leading-[0.9]">
+                                {org?.name || 'Sekolah'}
+                            </h2>
+                        </div>
 
-                    <div className="flex flex-wrap justify-center gap-4">
-                        <button onClick={() => router.push('/dashboard/proktor/members')} className="px-8 py-5 bg-white/5 hover:bg-white/10 text-white font-black rounded-2xl border border-white/10 transition-all backdrop-blur-sm active:scale-95 text-xs uppercase tracking-widest flex items-center gap-2">
-                            Batch Guru
-                        </button>
-                        <button onClick={() => router.push('/dashboard/proktor/members')} className="px-8 py-5 bg-white/5 hover:bg-white/10 text-white font-black rounded-2xl border border-white/10 transition-all backdrop-blur-sm active:scale-95 text-xs uppercase tracking-widest flex items-center gap-2">
-                            Batch Siswa
-                        </button>
-                        <button onClick={() => router.push('/dashboard/proktor/exams')} className="px-10 py-5 bg-accent hover:bg-orange-500 text-primary font-black rounded-2xl shadow-xl shadow-accent/20 transition-all active:scale-95 text-xs uppercase tracking-widest flex items-center gap-3">
-                            <Plus size={18} strokeWidth={3} /> Jadwal Baru
-                        </button>
+                        <div className="mt-8 flex items-center gap-4 text-white/50 text-xs font-bold uppercase tracking-widest">
+                            <div className="h-[1px] w-12 bg-accent/50"></div>
+                            <span>Pusat Kendali Akademik Terpadu</span>
+                        </div>
                     </div>
                 </div>
             </header>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                 {[
-                    { label: 'Total Members', value: stats.totalMembers, icon: Users, accent: 'bg-primary/5 text-primary', trend: '+12% Since last month' },
-                    { label: 'Today Assessments', value: stats.totalExams, icon: ClipboardCheck, accent: 'bg-green-50 text-green-600', trend: 'Active Schedule' },
-                    { label: 'Live Sessions', value: stats.activeAttempts, icon: Activity, accent: 'bg-accent/5 text-accent', trend: 'In-progress now' },
+                    { label: 'Total Anggota', value: stats.totalMembers, icon: Users, accent: 'bg-primary/5 text-primary', sub: 'Guru & Siswa' },
+                    { label: 'Bank Soal', value: stats.totalBanks, icon: Database, accent: 'bg-blue-50 text-blue-600', sub: 'Koleksi Soal' },
+                    { label: 'Berlangsung', value: stats.ongoingExams, icon: Activity, accent: 'bg-green-50 text-green-600', sub: 'Ujian Aktif' },
+                    { label: 'Mendatang', value: stats.upcomingExams, icon: Clock, accent: 'bg-orange-50 text-orange-600', sub: 'Terjadwal' },
+                    { label: 'Selesai', value: stats.finishedExams, icon: CheckCircle2, accent: 'bg-slate-50 text-slate-600', sub: 'Arsip Ujian' },
                 ].map((item, i) => (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         key={i}
-                        className="bg-white border border-slate-100 p-10 rounded-[2.5rem] hover:border-primary/20 transition-all shadow-premium group relative overflow-hidden"
+                        className="bg-white border border-slate-100 p-6 rounded-[2rem] hover:border-primary/20 transition-all shadow-lg group relative overflow-hidden"
                     >
-                        <div className="absolute top-0 right-0 p-8 opacity-5">
-                            <item.icon size={80} strokeWidth={1} />
-                        </div>
                         <div className="relative">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className={`w-14 h-14 rounded-2xl ${item.accent} flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm`}>
-                                    <item.icon size={24} strokeWidth={2.5} />
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className={`w-10 h-10 rounded-xl ${item.accent} flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm`}>
+                                    <item.icon size={18} strokeWidth={2.5} />
                                 </div>
                                 <div>
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">{item.label}</span>
-                                    <div className="flex items-center gap-1.5 text-[10px] text-slate-300 font-bold">
-                                        <TrendingUp size={12} /> {item.trend}
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">{item.label}</span>
+                                    <div className="text-[8px] text-slate-300 font-bold uppercase tracking-wider">
+                                        {item.sub}
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-6xl font-black text-primary italic tracking-tighter">{item.value}</span>
-                                <div className="w-1.5 h-1.5 bg-accent rounded-full mb-2"></div>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="text-3xl font-black text-primary tracking-tighter">{item.value}</span>
+                                <div className="w-1.5 h-1.5 bg-accent rounded-full mb-1"></div>
                             </div>
                         </div>
                     </motion.div>
                 ))}
             </div>
 
-            {/* Main Content: Live Monitoring Table */}
-            <div className="bg-white border border-slate-100 rounded-[3.5rem] overflow-hidden shadow-premium">
-                <div className="p-12 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <h2 className="text-3xl font-black text-primary uppercase italic tracking-tighter">Live Monitor</h2>
+            {/* Main Content: Live Monitoring */}
+            <div className="bg-white border border-slate-100 rounded-[3rem] lg:rounded-[3.5rem] overflow-hidden shadow-premium">
+                <div className="p-8 lg:p-12 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="text-center md:text-left">
+                        <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
+                            <h2 className="text-2xl lg:text-3xl font-black text-primary uppercase tracking-tighter">Live Monitor</h2>
                             <span className="px-4 py-1.5 bg-accent/10 text-accent text-[9px] font-black uppercase tracking-widest rounded-full flex items-center gap-2">
                                 <span className="w-2 h-2 bg-accent rounded-full animate-ping"></span> Real-time
                             </span>
                         </div>
-                        <p className="text-slate-400 font-bold italic text-sm">Pemantauan aktivitas ujian aktif hari ini.</p>
+                        <p className="text-slate-400 font-bold text-sm">Pemantauan aktivitas ujian aktif hari ini.</p>
                     </div>
 
                     <div className="flex gap-4">
-                        <div className="flex -space-x-3">
+                        <div className="hidden md:flex -space-x-3">
                             {[1, 2, 3].map(i => (
                                 <div key={i} className="w-10 h-10 border-2 border-white rounded-full bg-slate-100 flex items-center justify-center font-black text-[10px] text-slate-400">?</div>
                             ))}
@@ -158,61 +167,100 @@ export default function ProktorDashboard() {
                     </div>
                 </div>
 
-                <div className="p-8">
+                <div className="p-4 lg:p-8">
                     {exams.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-separate border-spacing-y-4">
-                                <thead>
-                                    <tr className="text-slate-300 text-[10px] font-black uppercase tracking-[0.3em]">
-                                        <th className="px-8 pb-4">Assesment Details</th>
-                                        <th className="px-8 pb-4 text-center">Timing</th>
-                                        <th className="px-8 pb-4 text-center">Activity</th>
-                                        <th className="px-8 pb-4 text-right">Gate</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {exams.map((exam) => (
-                                        <tr key={exam.id} className="group cursor-pointer">
-                                            <td className="px-8 py-8 bg-slate-50/50 rounded-l-[2rem] border-y border-l border-slate-100/50 group-hover:bg-slate-100/80 transition-all">
-                                                <div className="flex items-center gap-6">
-                                                    <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-primary border border-slate-100">
-                                                        <ClipboardCheck size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-black text-primary uppercase italic text-lg tracking-tight leading-none mb-1">{exam.title}</p>
-                                                        <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ID: {exam.id.split('-')[0]}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-8 bg-slate-50/50 border-y border-slate-100/50 group-hover:bg-slate-100/80 text-center">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="font-black text-primary text-sm uppercase italic">{exam.duration_minutes} Mins</span>
-                                                    <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">Duration</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-8 bg-slate-50/50 border-y border-slate-100/50 group-hover:bg-slate-100/80 text-center">
-                                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-100 shadow-sm">
-                                                    <span className={`w-2 h-2 rounded-full ${exam.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
-                                                    <span className="text-[10px] font-black text-primary uppercase tracking-tighter">{exam.status}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-8 py-8 bg-slate-50/50 rounded-r-[2rem] border-y border-r border-slate-100/50 group-hover:bg-slate-100/80 text-right">
-                                                <button onClick={() => router.push('/dashboard/proktor/monitoring?exam=' + exam.id)} className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-primary-light transition-all active:scale-95 shadow-lg shadow-primary/10 group/btn">
-                                                    Monitor Hub <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                                                </button>
-                                            </td>
+                        <>
+                            {/* Desktop Table */}
+                            <div className="hidden lg:block overflow-x-auto">
+                                <table className="w-full text-left border-separate border-spacing-y-4">
+                                    <thead>
+                                        <tr className="text-slate-300 text-[10px] font-black uppercase tracking-[0.3em]">
+                                            <th className="px-8 pb-4">Assesment Details</th>
+                                            <th className="px-8 pb-4 text-center">Timing</th>
+                                            <th className="px-8 pb-4 text-center">Activity</th>
+                                            <th className="px-8 pb-4 text-right">Gate</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {exams.map((exam) => (
+                                            <tr key={exam.id} className="group cursor-pointer">
+                                                <td className="px-8 py-8 bg-slate-50/50 rounded-l-[2rem] border-y border-l border-slate-100/50 group-hover:bg-slate-100/80 transition-all">
+                                                    <div className="flex items-center gap-6">
+                                                        <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-primary border border-slate-100">
+                                                            <ClipboardCheck size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-black text-primary uppercase text-lg tracking-tight leading-none mb-1">{exam.title}</p>
+                                                            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">ID: {exam.id.split('-')[0]}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-8 bg-slate-50/50 border-y border-slate-100/50 group-hover:bg-slate-100/80 text-center">
+                                                    <div className="flex flex-col items-center">
+                                                        <span className="font-black text-primary text-sm uppercase">{exam.duration_minutes} Mins</span>
+                                                        <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest">Duration</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-8 bg-slate-50/50 border-y border-slate-100/50 group-hover:bg-slate-100/80 text-center">
+                                                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-100 shadow-sm">
+                                                        <span className={`w-2 h-2 rounded-full ${exam.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
+                                                        <span className="text-[10px] font-black text-primary uppercase tracking-tighter">{exam.status}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-8 bg-slate-50/50 rounded-r-[2rem] border-y border-r border-slate-100/50 group-hover:bg-slate-100/80 text-right">
+                                                    <button onClick={() => router.push('/dashboard/proktor/monitoring?exam=' + exam.id)} className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-primary-light transition-all active:scale-95 shadow-lg shadow-primary/10 group/btn">
+                                                        Monitor Hub <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile Cards (Eden Style) */}
+                            <div className="lg:hidden space-y-4 px-4 pb-8">
+                                {exams.map((exam) => (
+                                    <div key={exam.id} className="bg-slate-50/50 border border-slate-100 p-6 rounded-[2rem] space-y-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center text-primary border border-slate-100 shrink-0">
+                                                <ClipboardCheck size={20} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-black text-primary uppercase text-sm tracking-tight truncate">{exam.title}</p>
+                                                <p className="text-slate-400 font-bold text-[8px] uppercase tracking-widest">ID: {exam.id.split('-')[0]}</p>
+                                            </div>
+                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-100 shadow-sm shrink-0">
+                                                <span className={`w-1.5 h-1.5 rounded-full ${exam.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`}></span>
+                                                <span className="text-[8px] font-black text-primary uppercase tracking-tighter">{exam.status}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-white p-3 rounded-xl border border-slate-100">
+                                                <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest mb-1">Duration</p>
+                                                <p className="font-black text-primary text-xs uppercase">{exam.duration_minutes} Mins</p>
+                                            </div>
+                                            <div className="bg-white p-3 rounded-xl border border-slate-100">
+                                                <p className="text-[7px] font-black text-slate-300 uppercase tracking-widest mb-1">Timing</p>
+                                                <p className="font-black text-primary text-xs uppercase">Schedule</p>
+                                            </div>
+                                        </div>
+
+                                        <button onClick={() => router.push('/dashboard/proktor/monitoring?exam=' + exam.id)} className="w-full py-4 bg-primary text-white font-black text-[9px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary/10 flex items-center justify-center gap-2">
+                                            Enter Monitoring <ArrowUpRight size={14} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
                     ) : (
                         <div className="py-24 text-center">
                             <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 border border-slate-100">
                                 <Activity size={32} className="text-slate-200" />
                             </div>
-                            <h3 className="text-2xl font-black text-slate-300 uppercase italic tracking-tighter mb-2">No Active Assessment</h3>
-                            <p className="text-slate-400 font-bold italic text-sm">Hening di jalur monitoring. Jadwalkan ujian untuk memulai.</p>
+                            <h3 className="text-2xl font-black text-slate-300 uppercase tracking-tighter mb-2">No Active Assessment</h3>
+                            <p className="text-slate-400 font-bold text-sm">Hening di jalur monitoring. Jadwalkan ujian untuk memulai.</p>
                         </div>
                     )}
                 </div>

@@ -125,37 +125,50 @@ export default function OrgsManagement() {
 
     return (
         <div className="space-y-12 pb-20">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                <div>
-                    <div className="flex items-center gap-3 text-primary-light font-black uppercase tracking-[0.3em] text-[10px] mb-4">
-                        <div className="w-8 h-px bg-primary/30"></div>
-                        Manajemen Ekosistem
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0c1425] via-slate-900 to-[#020617] text-white border border-slate-800 shadow-2xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="text-center md:text-left">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-white/10"
+                        >
+                            <School size={10} className="text-primary" /> Ecosystem Management
+                        </motion.div>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
+                            Daftar <span className="text-primary">Sekolah</span>
+                        </h2>
+                        <p className="text-slate-400 font-bold max-w-sm text-sm uppercase tracking-tight">
+                            Manajemen instansi dan lisensi sekolah
+                        </p>
                     </div>
-                    <h1 className="text-5xl font-black text-white tracking-tighter">Daftar Sekolah</h1>
+
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="group bg-primary hover:bg-primary text-white font-black px-8 py-4 rounded-xl shadow-xl shadow-primary/10 transition-all flex items-center gap-3 active:scale-95 text-[10px] uppercase tracking-widest"
+                    >
+                        <PlusCircle size={18} className="group-hover:rotate-90 transition-transform" /> DAFTARKAN SEKOLAH
+                    </button>
                 </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-primary hover:bg-primary text-white font-black px-10 py-4 rounded-2xl shadow-2xl shadow-primary/20 transition-all flex items-center gap-3 active:scale-95"
-                >
-                    <PlusCircle size={24} /> Daftarkan Sekolah
-                </button>
             </header>
 
             {/* Controls */}
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative group">
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500 group-hover:text-primary-light transition-colors" size={20} />
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30 group-hover:text-primary-light transition-colors" size={18} />
                     <input
                         type="text"
-                        placeholder="Cari sekolah berdasarkan nama atau subdomain..."
+                        placeholder="CARI SEKOLAH BERDASARKAN NAMA ATAU SUBDOMAIN..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-slate-900/50 border border-slate-800/80 rounded-3xl py-5 pl-16 pr-6 text-white text-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-slate-600"
+                        className="w-full bg-slate-900/60 border border-slate-800 rounded-xl py-4 pl-14 pr-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-slate-600 font-bold uppercase tracking-tight"
                     />
                 </div>
-                <div className="flex gap-4">
-                    <button className="px-8 py-5 bg-slate-900/50 border border-slate-800 rounded-3xl text-white font-bold hover:bg-slate-800 transition-all">Filter</button>
-                    <button className="px-8 py-5 bg-slate-900/50 border border-slate-800 rounded-3xl text-white font-bold hover:bg-slate-800 transition-all">Export</button>
+                <div className="flex gap-2">
+                    <button className="px-6 py-4 bg-slate-900/60 border border-slate-800 rounded-xl text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all">Filter</button>
+                    <button className="px-6 py-4 bg-slate-900/60 border border-slate-800 rounded-xl text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all">Export</button>
                 </div>
             </div>
 
@@ -177,7 +190,7 @@ export default function OrgsManagement() {
                                 whileHover={{ y: -8 }}
                                 className="bg-slate-900/40 border border-slate-800/60 rounded-[2.5rem] overflow-hidden group hover:border-primary/40 transition-all backdrop-blur-xl flex flex-col"
                             >
-                                <div className="p-10 flex-1">
+                                <div className="p-6 flex-1">
                                     <div className="flex justify-between items-start mb-8">
                                         <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 border border-white/5 shadow-inner">
                                             <School size={32} />
@@ -188,7 +201,7 @@ export default function OrgsManagement() {
                                         </div>
                                     </div>
 
-                                    <h3 className="text-2xl font-black text-white mb-1 tracking-tight line-clamp-1">{org.name}</h3>
+                                    <h3 className="text-xl font-black text-white mb-1 tracking-tight line-clamp-1 uppercase">{org.name}</h3>
                                     <div className="flex items-center gap-2 text-primary-light font-bold text-sm mb-6">
                                         <Globe size={14} /> cbt-app.com/{org.slug}
                                     </div>
@@ -218,21 +231,21 @@ export default function OrgsManagement() {
                                         </div>
                                         <div>
                                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Lisensi</p>
-                                            <p className="text-lg font-bold text-white uppercase italic text-[10px]">Enterprise</p>
+                                            <p className="text-lg font-bold text-white uppercase text-[10px]">Enterprise</p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="px-10 py-6 bg-slate-800/20 border-t border-white/5 flex items-center justify-between">
+                                <div className="px-6 py-4 bg-slate-800/20 border-t border-white/5 flex items-center justify-between">
                                     <button
                                         onClick={() => handleManageOrg(org.id)}
-                                        className="text-[10px] font-black text-primary hover:text-accent transition-colors flex items-center gap-2 uppercase tracking-widest px-4 py-2 bg-primary/5 rounded-xl border border-primary/10"
+                                        className="text-[9px] font-black text-primary hover:text-accent transition-colors flex items-center gap-2 uppercase tracking-widest px-4 py-2 bg-primary/5 rounded-xl border border-primary/10"
                                     >
-                                        <ShieldCheck size={16} /> Kelola
+                                        <ShieldCheck size={14} /> Kelola
                                     </button>
                                     <button
                                         onClick={() => handleDeleteOrg(org.id)}
-                                        className="text-[10px] font-black text-rose-500 hover:text-rose-400 transition-colors uppercase tracking-widest px-4 py-2 bg-rose-500/10 rounded-xl border border-rose-500/20"
+                                        className="text-[9px] font-black text-rose-500 hover:text-rose-400 transition-colors uppercase tracking-widest px-4 py-2 bg-rose-500/10 rounded-xl border border-rose-500/20"
                                     >
                                         Hapus
                                     </button>

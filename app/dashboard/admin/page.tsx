@@ -23,7 +23,7 @@ const QuickAction = ({ label, desc, icon: Icon, href, color, shadow }: any) => (
             <div className={`w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center ${color} shadow-sm mb-6 group-hover:rotate-6 transition-transform`}>
                 <Icon size={32} />
             </div>
-            <h3 className="text-xl font-black text-primary uppercase italic tracking-tight mb-2 group-hover:text-accent transition-colors">{label}</h3>
+            <h3 className="text-xl font-black text-primary uppercase tracking-tight mb-2 group-hover:text-accent transition-colors">{label}</h3>
             <p className="text-slate-500 text-sm font-medium mb-8 flex-1">{desc}</p>
             <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-widest group-hover:text-accent transition-colors">
                 Buka Sekarang <ArrowRight size={16} />
@@ -36,35 +36,35 @@ export default function AdminDashboard() {
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
             {/* Header Section */}
-            <header className="relative p-10 md:p-14 overflow-hidden rounded-[3rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-2xl shadow-primary/20">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-accent opacity-10 blur-[100px] -mr-32 -mt-32 rounded-full"></div>
-                <div className="absolute bottom-0 left-0 w-72 h-72 bg-white opacity-5 blur-[80px] -ml-20 -mb-20 rounded-full"></div>
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-xl shadow-primary/10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 blur-[60px] -ml-16 -mb-16 rounded-full"></div>
 
-                <div className="relative flex flex-col md:flex-row justify-between items-start md:items-end gap-10">
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="text-center md:text-left">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest mb-6"
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4"
                         >
-                            <ShieldCheck size={12} className="text-accent" /> System Administrator
+                            <ShieldCheck size={10} className="text-accent" /> System Administrator
                         </motion.div>
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 uppercase italic">
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase">
                             Owner <span className="text-accent">Control</span>
                         </h1>
-                        <p className="text-white/60 font-bold max-w-md italic text-lg">
-                            Selamat datang. Kendalikan seluruh ekosistem UNELMACBT di sini.
+                        <p className="text-white/60 font-bold max-w-sm text-sm">
+                            Kendalikan seluruh ekosistem Unelma di sini.
                         </p>
                     </div>
 
-                    <div className="flex bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/10 items-center">
-                        <div className="px-6 py-4 flex items-center gap-3 text-emerald-400 font-black text-[10px] uppercase tracking-widest border-r border-white/10">
-                            <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-                            System Online
+                    <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-xl border border-white/10 items-center">
+                        <div className="px-5 py-3 flex items-center gap-2.5 text-emerald-400 font-black text-[9px] uppercase tracking-widest border-r border-white/10">
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+                            Online
                         </div>
-                        <div className="px-6 py-4 flex items-center gap-3 text-white/70 font-black text-[10px] uppercase tracking-widest">
-                            <Database size={16} className="text-accent" />
-                            Node-01 JKT
+                        <div className="px-5 py-3 flex items-center gap-2.5 text-white/70 font-black text-[9px] uppercase tracking-widest">
+                            <Database size={14} className="text-accent" />
+                            Node-01
                         </div>
                     </div>
                 </div>
@@ -83,14 +83,14 @@ export default function AdminDashboard() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
                         key={i}
-                        className="bg-white border border-slate-100 p-8 rounded-[2.5rem] group hover:border-primary/20 hover:shadow-premium transition-all relative overflow-hidden"
+                        className="bg-white border border-slate-100 p-6 rounded-[2rem] group hover:border-primary/20 transition-all shadow-lg relative overflow-hidden"
                     >
-                        <div className="absolute top-0 right-0 p-6 opacity-5">
-                            <stat.icon size={60} />
+                        <div className="absolute top-0 right-0 p-5 opacity-[0.03]">
+                            <stat.icon size={40} />
                         </div>
-                        <stat.icon className={`${stat.color} mb-4`} size={28} strokeWidth={2.5} />
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{stat.label}</p>
-                        <p className="text-4xl font-black text-slate-900 tracking-tighter italic">{stat.value}</p>
+                        <stat.icon className={`${stat.color} mb-3`} size={20} strokeWidth={2.5} />
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                        <p className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</p>
                     </motion.div>
                 ))}
             </div>
@@ -119,8 +119,8 @@ export default function AdminDashboard() {
                         <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8 border border-white/20">
                             <PlusCircle className="text-accent" size={32} />
                         </div>
-                        <h2 className="text-3xl font-black text-white leading-none mb-4 tracking-tighter uppercase italic">Ekspansi <br /><span className="text-accent">Jaringan</span></h2>
-                        <p className="text-white/60 font-medium text-sm leading-relaxed mb-8 italic">
+                        <h2 className="text-3xl font-black text-white leading-none mb-4 tracking-tighter uppercase">Ekspansi <br /><span className="text-accent">Jaringan</span></h2>
+                        <p className="text-white/60 font-medium text-sm leading-relaxed mb-8">
                             Mulai ekspansi ekosistem Anda dengan menambahkan sekolah mitra dalam hitungan detik.
                         </p>
                     </div>

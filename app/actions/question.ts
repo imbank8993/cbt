@@ -67,6 +67,35 @@ export async function saveQuestionAction(data: {
 }
 
 /**
+ * Patch a single metadata key on a question (e.g. question_layout)
+ */
+export async function updateQuestionMetadataAction(questionId: string, metadataUpdates: Record<string, any>) {
+    const supabaseAdmin = getSupabaseAdmin();
+    try {
+        // Fetch current metadata first so we don't overwrite other keys
+        const { data: q, error: fetchErr } = await supabaseAdmin
+            .from('bank_questions')
+            .select('metadata')
+            .eq('id', questionId)
+            .single();
+        if (fetchErr) throw fetchErr;
+
+        const newMetadata = { ...(q?.metadata || {}), ...metadataUpdates };
+
+        const { error } = await supabaseAdmin
+            .from('bank_questions')
+            .update({ metadata: newMetadata })
+            .eq('id', questionId);
+        if (error) throw error;
+
+        return { success: true };
+    } catch (error: any) {
+        console.error('Question: Metadata update error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
  * Get all questions for a specific bank
  */
 export async function getBankQuestions(bankId: string) {
@@ -78,11 +107,31 @@ export async function getBankQuestions(bankId: string) {
             bank_question_options (*)
         `)
         .eq('bank_id', bankId)
+        .order('metadata->order_index', { ascending: true })
         .order('created_at', { ascending: true });
 
     if (error) {
         console.error('Question: Fetch error:', error);
         return [];
+    }
+
+    return data;
+}
+
+/**
+ * Get details for a specific question bank
+ */
+export async function getQuestionBankAction(bankId: string) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin
+        .from('question_banks')
+        .select('*')
+        .eq('id', bankId)
+        .single();
+
+    if (error) {
+        console.error('Bank: Fetch detail error:', error);
+        return null;
     }
 
     return data;
@@ -99,12 +148,10 @@ export async function testServerAction() {
 /**
  * Create a new question bank
  */
-export async function createQuestionBank(orgId: string, userId: string, title: string, description: string, subject: string, classLevel: string) {
-    console.log('Bank: Starting creation on server...', { orgId, userId, subject, classLevel });
+export async function createQuestionBank(orgId: string, userId: string, title: string, description: string, subject: string, classLevel: string, iconIdentifier?: string, imageUrl?: string) {
+    console.log('Bank: Starting creation on server...', { orgId, userId, subject, classLevel, iconIdentifier, imageUrl });
     try {
         const supabaseAdmin = getSupabaseAdmin();
-        console.log('Bank: Admin client initialized');
-
         const { data, error } = await supabaseAdmin
             .from('question_banks')
             .insert({
@@ -114,7 +161,9 @@ export async function createQuestionBank(orgId: string, userId: string, title: s
                 description,
                 subject,
                 class_level: classLevel,
-                is_published: false
+                is_published: false,
+                icon_identifier: iconIdentifier,
+                image_url: imageUrl
             })
             .select()
             .single();
@@ -124,13 +173,43 @@ export async function createQuestionBank(orgId: string, userId: string, title: s
             return { success: false, error: 'DB Error: ' + error.message };
         }
 
-        console.log('Bank: Successfully created:', data.id);
         revalidatePath('/dashboard/guru/questions');
         revalidatePath('/dashboard/proktor/questions');
         return { success: true, id: data.id };
     } catch (err: any) {
         console.error('Bank: Critical Server Error:', err);
         return { success: false, error: 'Server Exception: ' + (err.message || 'Unknown') };
+    }
+}
+
+/**
+ * Update an existing question bank
+ */
+export async function updateQuestionBankAction(bankId: string, orgId: string, data: { title?: string, description?: string, subject?: string, classLevel?: string, iconIdentifier?: string, imageUrl?: string }) {
+    const supabaseAdmin = getSupabaseAdmin();
+    try {
+        const updates: any = {};
+        if (data.title !== undefined) updates.title = data.title;
+        if (data.description !== undefined) updates.description = data.description;
+        if (data.subject !== undefined) updates.subject = data.subject;
+        if (data.classLevel !== undefined) updates.class_level = data.classLevel;
+        if (data.iconIdentifier !== undefined) updates.icon_identifier = data.iconIdentifier;
+        if (data.imageUrl !== undefined) updates.image_url = data.imageUrl;
+
+        const { error } = await supabaseAdmin
+            .from('question_banks')
+            .update(updates)
+            .eq('id', bankId)
+            .eq('organization_id', orgId);
+
+        if (error) throw error;
+
+        revalidatePath('/dashboard/guru/questions');
+        revalidatePath('/dashboard/proktor/questions');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Bank: Update error:', error);
+        return { success: false, error: error.message };
     }
 }
 
@@ -160,8 +239,8 @@ export async function deleteQuestionBank(bankId: string, orgId: string) {
 /**
  * List all question banks for an organization with role-based visibility
  */
-export async function listQuestionBanks(orgId: string, userId: string) {
-    console.log('Bank: Listing for OrgID:', orgId, 'UserID:', userId);
+export async function listQuestionBanks(orgId: string, userId: string, onlyPublished?: boolean) {
+    console.log('Bank: Listing for OrgID:', orgId, 'UserID:', userId, 'OnlyPublished:', onlyPublished);
     try {
         const supabaseAdmin = getSupabaseAdmin();
 
@@ -177,7 +256,7 @@ export async function listQuestionBanks(orgId: string, userId: string) {
 
         const roleData = memberRole as any;
         const roleName = roleData?.member_roles?.[0]?.roles?.name || (isAdmin ? 'Admin' : 'Siswa');
-        const canSeeAll = roleName === 'Admin' || roleName === 'Proktor';
+        // const canSeeAll = roleName === 'Admin' || roleName === 'Proktor';
 
         let query = supabaseAdmin
             .from('question_banks')
@@ -195,6 +274,11 @@ export async function listQuestionBanks(orgId: string, userId: string) {
         } else {
             // Guru/others only see their own banks
             query = query.eq('created_by', userId);
+        }
+
+        // 3. Filter by published status if requested
+        if (onlyPublished) {
+            query = query.eq('is_published', true);
         }
 
         const { data, error } = await query.order('created_at', { ascending: false });
@@ -257,6 +341,58 @@ export async function toggleQuestionBankPublishAction(bankId: string, orgId: str
         revalidatePath('/dashboard/proktor/exams');
         return { success: true };
     } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+/**
+ * Bulk Toggle Publish Status of question banks
+ */
+export async function bulkToggleQuestionBankPublishAction(bankIds: string[], orgId: string, isPublished: boolean) {
+    const supabaseAdmin = getSupabaseAdmin();
+    try {
+        const { error } = await supabaseAdmin
+            .from('question_banks')
+            .update({ is_published: isPublished })
+            .in('id', bankIds)
+            .eq('organization_id', orgId);
+
+        if (error) throw error;
+
+        revalidatePath('/dashboard/guru/questions');
+        revalidatePath('/dashboard/proktor/questions');
+        revalidatePath('/dashboard/proktor/exams');
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Update the order of multiple questions
+ */
+export async function updateQuestionsOrderAction(bankId: string, orderedIds: string[]) {
+    const supabaseAdmin = getSupabaseAdmin();
+    try {
+        // We'll update the metadata.order_index for each question to ensure persistence 
+        // regardless of the database schema having a dedicated 'order' column.
+        for (let i = 0; i < orderedIds.length; i++) {
+            const id = orderedIds[i];
+
+            // First get current metadata to preserve it
+            const { data: q } = await supabaseAdmin.from('bank_questions').select('metadata').eq('id', id).single();
+            const currentMetadata = q?.metadata || {};
+
+            await supabaseAdmin.from('bank_questions')
+                .update({
+                    metadata: { ...currentMetadata, order_index: i }
+                })
+                .eq('id', id);
+        }
+
+        revalidatePath(`/dashboard/guru/questions/${bankId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error('Question: Order update error:', error);
         return { success: false, error: error.message };
     }
 }

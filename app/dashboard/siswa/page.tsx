@@ -55,37 +55,30 @@ export default function SiswaDashboard() {
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
             {/* Header Section */}
-            <header className="relative p-10 md:p-14 overflow-hidden rounded-[3rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-2xl shadow-primary/20">
+            <header className="relative p-8 md:p-10 overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-2xl shadow-primary/20">
                 <div className="absolute top-0 right-0 w-96 h-96 bg-accent opacity-10 blur-[100px] -mr-32 -mt-32 rounded-full"></div>
                 <div className="absolute bottom-0 left-0 w-72 h-72 bg-white opacity-5 blur-[80px] -ml-20 -mb-20 rounded-full"></div>
 
-                <div className="relative flex flex-col md:flex-row justify-between items-center gap-10">
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="text-center md:text-left">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest mb-6"
-                        >
-                            <Sparkles size={12} className="text-accent" /> Student Hub
-                        </motion.div>
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 uppercase italic">
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase">
                             Halo, <span className="text-accent">{user?.user_metadata?.full_name?.split(' ')[0] || 'Siswa'}</span>
                         </h1>
-                        <p className="text-white/60 font-bold max-w-md italic text-lg">
+                        <p className="text-white/60 font-bold max-w-md text-base">
                             Siap untuk meraih hasil terbaik hari ini?
                         </p>
                     </div>
 
-                    <div className="flex bg-white/10 backdrop-blur-md p-6 rounded-[2.5rem] border border-white/10 items-center gap-6">
+                    <div className="flex bg-white/10 backdrop-blur-md p-5 rounded-[2rem] border border-white/10 items-center gap-5">
                         <div className="text-right">
                             <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-1">Rata-Rata Nilai</p>
-                            <p className="text-3xl font-black text-white italic tracking-tighter">
+                            <p className="text-3xl font-black text-white tracking-tighter">
                                 {results.length > 0 ? Math.round(results.reduce((acc, r) => acc + (Number(r.total_score) || 0), 0) / results.length) : 0}
-                                <span className="text-lg text-white/50">/100</span>
+                                <span className="text-base text-white/50">/100</span>
                             </p>
                         </div>
-                        <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center text-primary shadow-xl shadow-accent/20">
-                            <Award size={32} />
+                        <div className="w-14 h-14 bg-accent rounded-2xl flex items-center justify-center text-primary shadow-xl shadow-accent/20">
+                            <Award size={28} />
                         </div>
                     </div>
                 </div>
@@ -95,7 +88,7 @@ export default function SiswaDashboard() {
                 <div className="lg:col-span-2 space-y-10">
                     <section>
                         <div className="flex items-center gap-3 mb-8">
-                            <h2 className="text-2xl font-black text-primary uppercase italic tracking-tighter">Ujian Mendatang</h2>
+                            <h2 className="text-2xl font-black text-primary uppercase tracking-tighter">Ujian Mendatang</h2>
                             <button onClick={() => router.push('/dashboard/siswa/schedule')} className="px-4 py-1.5 bg-accent/10 text-accent text-[9px] font-black uppercase tracking-widest rounded-full flex items-center gap-2 hover:bg-accent hover:text-white transition-colors">
                                 <span className="w-2 h-2 bg-accent rounded-full animate-ping"></span> Jadwal Anda
                             </button>
@@ -111,8 +104,8 @@ export default function SiswaDashboard() {
                                     <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
                                         <Ghost size={32} className="text-slate-300" />
                                     </div>
-                                    <h3 className="text-xl font-black text-slate-300 uppercase italic tracking-tighter mb-2">Belum Ada Ujian</h3>
-                                    <p className="text-slate-400 font-bold italic text-sm">Anda bisa bersantai sejenak.</p>
+                                    <h3 className="text-xl font-black text-slate-300 uppercase tracking-tighter mb-2">Belum Ada Ujian</h3>
+                                    <p className="text-slate-400 font-bold text-sm">Anda bisa bersantai sejenak.</p>
                                 </div>
                             ) : (
                                 exams.map((exam, i) => {
@@ -129,7 +122,7 @@ export default function SiswaDashboard() {
                                                     <Clock size={20} className="text-accent mt-2" />
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-black text-primary text-xl uppercase italic tracking-tight mb-2 group-hover:text-accent transition-colors">{exam.title}</h3>
+                                                    <h3 className="font-black text-primary text-xl uppercase tracking-tight mb-2 group-hover:text-accent transition-colors">{exam.title}</h3>
                                                     <div className="flex items-center gap-3">
                                                         <span className="px-3 py-1 bg-slate-50 text-primary font-bold text-[10px] uppercase tracking-widest rounded-lg border border-slate-100">{formatTime(exam.start_time, exam.end_time)}</span>
                                                         <span className="px-3 py-1 bg-accent/10 text-accent font-black text-[10px] uppercase tracking-widest rounded-lg">{exam.duration_minutes} Mins</span>
@@ -151,7 +144,7 @@ export default function SiswaDashboard() {
                                                     Mulai <ArrowRight size={16} />
                                                 </button>
                                             ) : (
-                                                <div className="text-slate-400 font-black text-[10px] tracking-widest uppercase italic px-6 py-3 bg-slate-50 rounded-2xl border border-slate-100">{exam.status}</div>
+                                                <div className="text-slate-400 font-black text-[10px] tracking-widest uppercase px-6 py-3 bg-slate-50 rounded-2xl border border-slate-100">{exam.status}</div>
                                             )}
                                         </motion.div>
                                     );
@@ -164,16 +157,16 @@ export default function SiswaDashboard() {
                 <div className="space-y-8">
                     <div className="bg-white border border-slate-100 rounded-[3rem] shadow-premium p-10 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                        <h2 className="text-2xl font-black text-primary uppercase italic tracking-tighter mb-8">Riwayat Nilai</h2>
+                        <h2 className="text-2xl font-black text-primary uppercase tracking-tighter mb-8">Riwayat Nilai</h2>
                         <div className="space-y-8 relative z-10">
                             {results.length === 0 ? (
-                                <p className="text-sm font-medium text-slate-400 italic text-center py-4">Belum ada ujian yang diselesaikan.</p>
+                                <p className="text-sm font-medium text-slate-400 text-center py-4">Belum ada ujian yang diselesaikan.</p>
                             ) : (
                                 results.slice(0, 3).map((res, i) => (
                                     <div key={res.id || i} className="group">
                                         <div className="flex justify-between items-end mb-3">
-                                            <p className="font-black text-primary uppercase italic tracking-tight group-hover:text-accent transition-colors truncate pr-4">{res.exams?.title || 'Ujian'}</p>
-                                            <p className="text-sm font-black text-slate-500 italic shrink-0"><span className="text-primary text-xl">{Number(res.total_score).toFixed(0)}</span>/100</p>
+                                            <p className="font-black text-primary uppercase tracking-tight group-hover:text-accent transition-colors truncate pr-4">{res.exams?.title || 'Ujian'}</p>
+                                            <p className="text-sm font-black text-slate-500 shrink-0"><span className="text-primary text-xl">{Number(res.total_score).toFixed(0)}</span>/100</p>
                                         </div>
                                         <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
                                             <motion.div

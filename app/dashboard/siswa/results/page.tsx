@@ -29,7 +29,7 @@ export default function StudentResultsPage() {
         <div className="space-y-10 pb-20 animate-in fade-in duration-700">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
-                    <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight italic uppercase mb-2">
+                    <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tight uppercase mb-2">
                         Hasil <span className="text-primary">Studi</span>
                     </h1>
                     <p className="text-slate-500 font-medium text-lg">Rekapitulasi performa dan nilai ujian Anda.</p>
@@ -70,7 +70,7 @@ export default function StudentResultsPage() {
                                     </div>
                                 </div>
 
-                                <h3 className="text-xl font-black text-slate-800 italic uppercase tracking-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                                <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
                                     {/* @ts-ignore : nested relation */}
                                     {attempt.exams?.title || 'Ujian Tidak Diketahui'}
                                 </h3>
@@ -95,7 +95,7 @@ export default function StudentResultsPage() {
                                                 <div className="flex flex-col gap-1">
                                                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Nilai Akhir</span>
                                                     {canViewDetails && (
-                                                        <span className="text-[10px] font-bold text-primary italic">Klik untuk detail</span>
+                                                        <span className="text-[10px] font-bold text-primary">Klik untuk detail</span>
                                                     )}
                                                 </div>
                                                 <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ export default function StudentResultsPage() {
                     {results.length === 0 && (
                         <div className="col-span-full py-20 text-center bg-white border border-slate-100 rounded-[2rem]">
                             <Award size={64} className="text-slate-200 mx-auto mb-6" />
-                            <h3 className="text-xl font-black text-slate-800 italic uppercase tracking-tight mb-2">Belum Ada Hasil</h3>
+                            <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight mb-2">Belum Ada Hasil</h3>
                             <p className="text-slate-500 max-w-md mx-auto">Anda belum menyelesaikan ujian apapun. Hasil ujian akan muncul di sini setelah Anda mengumpulkannya.</p>
                         </div>
                     )}

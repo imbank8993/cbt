@@ -1,6 +1,7 @@
 import mammoth from "mammoth";
 import { Buffer } from "buffer";
 import { QuestionType } from "@/app/actions/question";
+import { uploadToHosting } from "@/lib/uploader";
 
 export interface ParsedQuestion {
     question_text: string;
@@ -17,10 +18,58 @@ export interface ParsedQuestion {
     metadata: any;
 }
 
+/**
+ * Mengekstrak gambar base64 dari HTML dan mengupload ke hosting eksternal
+ * Mengembalikan HTML baru dengan URL gambar eksternal
+ */
+async function uploadEmbeddedImages(html: string): Promise<string> {
+    // Cari semua tag <img src="data:..."> (base64 embedded images dari Word)
+    const imgRegex = /<img\s+[^>]*src="data:([^;]+);base64,([^"]+)"[^>]*>/gi;
+    const matches = [...html.matchAll(imgRegex)];
+
+    if (matches.length === 0) return html;
+
+    let result = html;
+
+    for (const match of matches) {
+        const mimeType = match[1]; // e.g. "image/png"
+        const base64Data = match[2];
+        const ext = mimeType.split('/')[1] || 'png';
+
+        try {
+            // Konversi base64 ke Blob/File
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+            const file = new File([blob], `docx_img_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`, { type: mimeType });
+
+            // Upload ke hosting eksternal
+            const uploadResult = await uploadToHosting(file, 'questions');
+
+            if (uploadResult.success && uploadResult.url) {
+                // Ganti src base64 dengan URL hosting
+                result = result.replace(match[0], `<img src="${uploadResult.url}" style="max-width:100%;height:auto;" />`);
+            }
+        } catch (err) {
+            console.error('Failed to upload embedded image:', err);
+            // Tetap gunakan base64 jika gagal upload
+        }
+    }
+
+    return result;
+}
+
 export async function parseDocxToQuestions(file: File): Promise<ParsedQuestion[]> {
     const arrayBuffer = await file.arrayBuffer();
     const result = await mammoth.convertToHtml({ arrayBuffer: Buffer.from(arrayBuffer) as any });
-    const html = result.value;
+    let html = result.value;
+
+    // Upload gambar yang di-embed dari Word ke hosting eksternal
+    html = await uploadEmbeddedImages(html);
 
     // 1. Try Table Format First
     if (html.includes('<table')) {
@@ -40,19 +89,32 @@ function parseTableFormat(html: string): ParsedQuestion[] {
         const cellMatches = rowMatches[i].match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [];
         if (cellMatches.length < 5) continue;
 
-        const cleanCell = (cellHtml: string) => {
-            return cellHtml
+        const cleanCell = (cellHtml: string, keepImages = false) => {
+            let cleaned = cellHtml
                 .replace(/<td[^>]*>/, "")
-                .replace(/<\/td>/, "")
-                .replace(/<\/p>/g, "\n")
-                .replace(/<br\s*\/?>/g, "\n")
-                .replace(/<[^>]*>/g, "")
-                .trim();
+                .replace(/<\/td>/, "");
+
+            if (keepImages) {
+                // Pertahankan tag <img> tapi bersihkan tag HTML lain
+                cleaned = cleaned
+                    .replace(/<\/p>/g, "\n")
+                    .replace(/<br\s*\/?>/g, "\n")
+                    .replace(/<(?!img\b)[^>]*>/g, "")
+                    .trim();
+            } else {
+                cleaned = cleaned
+                    .replace(/<\/p>/g, "\n")
+                    .replace(/<br\s*\/?>/g, "\n")
+                    .replace(/<[^>]*>/g, "")
+                    .trim();
+            }
+            return cleaned;
         };
 
-        const questionText = cleanCell(cellMatches[1]).replace(/\n+$/, "").replace(/\n/g, "<br>");
+        // Kolom pertanyaan: pertahankan gambar
+        const questionText = cleanCell(cellMatches[1], true).replace(/\n+$/, "").replace(/\n/g, "<br>");
         const typeRaw = cleanCell(cellMatches[2]).toUpperCase();
-        const optionsRaw = cleanCell(cellMatches[3]);
+        const optionsRaw = cleanCell(cellMatches[3], true); // pertahankan gambar di opsi juga
         const kunciRaw = cleanCell(cellMatches[4]);
         const poinRaw = cellMatches.length >= 6 ? cleanCell(cellMatches[5]) : "1";
 
@@ -103,7 +165,7 @@ function parseTableFormat(html: string): ParsedQuestion[] {
         } else {
             const kunciFlat = kunciRaw.split(/[\n,;]+/).map(l => l.trim().toUpperCase()).filter(l => l.length > 0);
             optLines.forEach((text, idx) => {
-                const plainText = text.replace(/^[a-eA-E][\.\)\s]+/, "").trim();
+                const plainText = text.replace(/^[a-eA-E][\.)\s]+/, "").trim();
                 const char = text.match(/^[a-eA-E]/)?.[0]?.toUpperCase() || String.fromCharCode(65 + idx);
                 const isCorrect = kunciFlat.includes(char) || kunciFlat.includes(text.toUpperCase()) || kunciFlat.includes(plainText.toUpperCase());
 
@@ -136,10 +198,11 @@ function parseParagraphFormat(html: string): ParsedQuestion[] {
     let currentOptions: any[] = [];
 
     for (const text of paragraphs) {
-        const plainText = text.replace(/<[^>]*>/g, "").trim();
-        if (/^\d+[\.\)\s]/.test(plainText)) {
+        // Bersihkan teks tapi pertahankan gambar
+        const plainText = text.replace(/<(?!img\b)[^>]*>/g, "").trim();
+        if (/^\d+[\.)\s]/.test(plainText)) {
             if (currentQuestion) finalizeQuestion(currentQuestion as ParsedQuestion, currentOptions, questions);
-            currentQuestion = { question_text: text.replace(/^\d+[\.\)\s]+/, ""), type: 'mcq', difficulty: 'medium', scoreDefault: 1, metadata: {} };
+            currentQuestion = { question_text: text.replace(/^\d+[\.)\s]+/, ""), type: 'mcq', difficulty: 'medium', scoreDefault: 1, metadata: {} };
             currentOptions = [];
             const markerMatch = plainText.match(/\[(MATCHING|ESSAY|SHORT_ANSWER|CATEGORIZATION|TRUE_FALSE|ISIAN|URAIAN)\]/i);
             if (markerMatch) {
@@ -152,7 +215,7 @@ function parseParagraphFormat(html: string): ParsedQuestion[] {
         }
         if (!currentQuestion) continue;
 
-        const optionMatch = plainText.match(/^([a-eA-E])[\.\)\s]+(.*)/);
+        const optionMatch = plainText.match(/^([a-eA-E])[\.)\s]+(.*)/);
         if (optionMatch) {
             currentOptions.push({ text: optionMatch[2].trim(), isCorrect: false, order: currentOptions.length, weight: 0 });
             continue;
