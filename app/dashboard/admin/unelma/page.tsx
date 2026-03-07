@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, List, Settings, LogOut, Plus, Edit2, Trash2,
-    Heart, X, Save, Tag, DollarSign, Clock, Layers, Package, ImageIcon
+    Heart, X, Save, Tag, DollarSign, Clock, Layers, Package, ImageIcon, School
 } from 'lucide-react';
 import {
     LayananItem, PricelistItem, getIcon,
@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { createTransactionAction } from '@/app/actions/payment';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 declare global {
     interface Window {
@@ -27,6 +28,7 @@ const AdminDashboard = () => {
     const [produk, setProduk] = useState<ProdukItem[]>([]);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
 
     // Modal States
     const [isLayananModalOpen, setIsLayananModalOpen] = useState(false);
@@ -177,6 +179,7 @@ const AdminDashboard = () => {
                 <div className="flex p-1.5 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-x-auto w-full md:w-max backdrop-blur-md">
                     {[
                         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+                        { id: 'orgs', label: 'Daftar Sekolah', icon: <School size={16} /> },
                         { id: 'layanan', label: 'Layanan', icon: <List size={16} /> },
                         { id: 'pricing_cbt', label: 'Paket CBT', icon: <DollarSign size={16} /> },
                         { id: 'pricing_to', label: 'Paket TO', icon: <DollarSign size={16} /> },
@@ -196,6 +199,8 @@ const AdminDashboard = () => {
                             {tab.label}
                         </button>
                     ))}
+                    {/* Native Link for Orgs since it's a different page */}
+                    {activeTab === 'orgs' && router.push('/dashboard/admin/orgs')}
                 </div>
 
             </div>
