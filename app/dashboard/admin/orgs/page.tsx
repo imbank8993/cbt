@@ -542,6 +542,95 @@ export default function OrgsManagement() {
                     </div>
                 )}
             </AnimatePresence>
+
+            {/* Subscription Management Modal */}
+            <AnimatePresence>
+                {showSubModal && (
+                    <div className="fixed inset-0 z-[80] flex items-center justify-center p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => { setShowSubModal(false); setSelectedOrg(null); }}
+                            className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"
+                        ></motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+                            className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-2xl overflow-hidden"
+                        >
+                            <form onSubmit={handleUpdateSubscription} className="p-10">
+                                <div className="flex justify-between items-center mb-8">
+                                    <div>
+                                        <h2 className="text-2xl font-black text-white tracking-tighter mb-1">Aktivasi / Perpanjang</h2>
+                                        <p className="text-slate-500 font-medium text-xs">{selectedOrg?.name}</p>
+                                    </div>
+                                    <button type="button" onClick={() => { setShowSubModal(false); setSelectedOrg(null); }} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-all border border-white/5">
+                                        <X size={20} />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 flex gap-4 items-start">
+                                        <AlertCircle size={20} className="text-primary-light shrink-0 mt-0.5" />
+                                        <p className="text-xs text-primary-light font-medium leading-relaxed">
+                                            Memilih paket akan mengatur masa berlaku proktor sesuai dengan durasi paket tersebut mulai dari hari ini.
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2 mb-2 block">Pilih Paket</label>
+                                        <select
+                                            required
+                                            value={selectedPackageId}
+                                            onChange={(e) => setSelectedPackageId(e.target.value)}
+                                            className="w-full bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 text-white outline-none shadow-inner text-sm font-bold cursor-pointer appearance-none"
+                                        >
+                                            <option value="">-- PILIH PAKET --</option>
+                                            {packages.map(pkg => (
+                                                <option key={pkg.id} value={pkg.id}>
+                                                    {pkg.name} ({pkg.duration_days} Hari) - Rp {pkg.price.toLocaleString('id-ID')}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {subscriptions[selectedOrg?.id] && (
+                                        <div className="flex items-center gap-3 px-3 py-3 bg-white/5 rounded-xl border border-white/5">
+                                            <Calendar size={14} className="text-slate-500" />
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                                Eksisting S/D: {new Date(subscriptions[selectedOrg.id].end_date).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-10 flex gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowSubModal(false); setSelectedOrg(null); }}
+                                        className="px-6 py-4 bg-slate-800 text-slate-400 font-bold rounded-xl hover:bg-slate-700 hover:text-white transition-all text-sm"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSavingSub}
+                                        className="flex-1 py-4 bg-primary hover:bg-primary text-white font-black rounded-xl shadow-xl shadow-primary/40 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                                    >
+                                        {isSavingSub ? 'Menyimpan...' : (
+                                            <>
+                                                <CreditCard size={18} /> Aktifkan Paket
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div >
     );
 }
