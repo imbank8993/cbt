@@ -52,7 +52,6 @@ const AdminDashboard = () => {
             document.body.removeChild(script);
         };
     }, []);
-
     const loadData = async () => {
         setIsLoading(true);
         const [lData, pData, prData] = await Promise.all([fetchLayanan(), fetchPricelist(), fetchProduk()]);
@@ -60,6 +59,14 @@ const AdminDashboard = () => {
         setPrices(pData);
         setProduk(prData);
         setIsLoading(false);
+    };
+
+    const handleTabChange = (tabId: string) => {
+        if (tabId === 'orgs') {
+            router.push('/dashboard/admin/orgs');
+            return;
+        }
+        setActiveTab(tabId);
     };
 
     const handleCheckout = async (item: { id: string, type: 'layanan' | 'pricelist' | 'produk', name: string, price: number }) => {
@@ -189,18 +196,16 @@ const AdminDashboard = () => {
                     ].map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-3 px-8 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeTab === tab.id
-                                ? 'bg-unelma-navy text-white shadow-xl shadow-unelma-navy/20'
-                                : 'text-slate-400 hover:text-unelma-navy hover:bg-slate-50'
+                            onClick={() => handleTabChange(tab.id)}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab.id
+                                ? 'bg-unelma-navy text-white shadow-lg shadow-unelma-navy/20'
+                                : 'text-slate-500 hover:bg-slate-50 hover:text-unelma-navy'
                                 }`}
                         >
                             {tab.icon}
                             {tab.label}
                         </button>
                     ))}
-                    {/* Native Link for Orgs since it's a different page */}
-                    {activeTab === 'orgs' && router.push('/dashboard/admin/orgs')}
                 </div>
 
             </div>
