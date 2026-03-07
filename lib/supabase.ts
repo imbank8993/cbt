@@ -3,10 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+// Debug log for production (safe, no keys exposed)
+console.log('Supabase Init: URL detected =', !!supabaseUrl, '| Key detected =', !!supabaseAnonKey);
+
 if (!supabaseUrl || !supabaseAnonKey) {
-    if (process.env.NODE_ENV !== 'production') {
-        console.warn('Supabase env variables are missing');
-    }
+    console.error('CRITICAL: Supabase Environment Variables are MISSING!');
 }
 
 export const supabase = createClient(
