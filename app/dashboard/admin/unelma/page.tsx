@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, List, Settings, LogOut, Plus, Edit2, Trash2,
-    Heart, X, Save, Tag, DollarSign, Clock, Layers, Package, ImageIcon, School
+    Heart, X, Save, Tag, DollarSign, Clock, Layers, Package, ImageIcon, School,
+    ShieldCheck, ArrowRight
 } from 'lucide-react';
 import {
     LayananItem, PricelistItem, getIcon,
@@ -28,6 +29,7 @@ const AdminDashboard = () => {
     const [produk, setProduk] = useState<ProdukItem[]>([]);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [isLoading, setIsLoading] = useState(true);
+    const [orgStats, setOrgStats] = useState({ total: 0, active: 0, expired: 0 });
     const router = useRouter();
 
     // Modal States
@@ -55,6 +57,21 @@ const AdminDashboard = () => {
     const loadData = async () => {
         setIsLoading(true);
         const [lData, pData, prData] = await Promise.all([fetchLayanan(), fetchPricelist(), fetchProduk()]);
+
+        // Fetch Organization & Subscription Stats
+        const { data: orgs } = await supabase.from('organizations').select('id');
+        const { data: subs } = await supabase.from('organization_subscriptions').select('end_date');
+
+        const now = new Date();
+        const activeCount = subs?.filter(s => new Date(s.end_date) > now).length || 0;
+        const totalOrgs = orgs?.length || 0;
+
+        setOrgStats({
+            total: totalOrgs,
+            active: activeCount,
+            expired: Math.max(0, totalOrgs - activeCount)
+        });
+
         setLayanan(lData);
         setPrices(pData);
         setProduk(prData);
@@ -251,26 +268,64 @@ const AdminDashboard = () => {
             ) : (
                 <div className="pb-20">
                     {activeTab === 'dashboard' && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {[
-                                { label: 'Total Layanan', value: layanan.length, icon: <List className="text-unelma-orange" /> },
-                                { label: 'Paket Pricing', value: prices.length, icon: <DollarSign className="text-blue-500" /> },
-                                { label: 'Varian Produk', value: produk.length, icon: <Package className="text-emerald-500" /> },
-                            ].map((stat, i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group"
-                                >
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="p-4 bg-slate-50 rounded-2xl group-hover:scale-110 transition-transform">{stat.icon}</div>
-                                        <div className="text-4xl font-black text-unelma-navy tracking-tighter">{stat.value}</div>
+                        <div className="space-y-12">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {[
+                                    { label: 'Total Layanan', value: layanan.length, icon: <List className="text-unelma-orange" /> },
+                                    { label: 'Paket Pricing', value: prices.length, icon: <DollarSign className="text-blue-500" /> },
+                                    { label: 'Varian Produk', value: produk.length, icon: <Package className="text-emerald-500" /> },
+                                ].map((stat, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.1 }}
+                                        className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group"
+                                    >
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="p-4 bg-slate-50 rounded-2xl group-hover:scale-110 transition-transform">{stat.icon}</div>
+                                            <div className="text-4xl font-black text-unelma-navy tracking-tighter">{stat.value}</div>
+                                        </div>
+                                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{stat.label}</h4>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            <div className="bg-slate-50 p-12 rounded-[3.5rem] border border-slate-200/50">
+                                <div className="flex flex-col md:flex-row justify-between items-end gap-8 mb-12">
+                                    <div>
+                                        <h3 className="text-2xl font-black text-unelma-navy tracking-tight uppercase mb-2">Manajemen Langganan</h3>
+                                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Status validitas akun proktor sekolah</p>
                                     </div>
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">{stat.label}</h4>
-                                </motion.div>
-                            ))}
+                                    <button
+                                        onClick={() => router.push('/dashboard/admin/orgs')}
+                                        className="px-8 py-4 bg-unelma-navy text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2"
+                                    >
+                                        Kelola di Daftar Sekolah <ArrowRight size={14} />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 flex items-center gap-6">
+                                        <div className="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500">
+                                            <ShieldCheck size={32} />
+                                        </div>
+                                        <div>
+                                            <div className="text-3xl font-black text-emerald-600 mb-1">{orgStats.active}</div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Proktor Aktif</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white p-8 rounded-[2rem] border border-rose-100 flex items-center gap-6">
+                                        <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500">
+                                            <Clock size={32} />
+                                        </div>
+                                        <div>
+                                            <div className="text-3xl font-black text-rose-600 mb-1">{orgStats.expired}</div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expired / Non-aktif</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 
