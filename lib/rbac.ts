@@ -69,3 +69,52 @@ export const getUserRole = async (userId: string): Promise<Role | null> => {
         return null;
     }
 };
+
+export const checkOrganizationSubscription = async (userId: string): Promise<{ isValid: boolean; message?: string }> => {
+    try {
+        // 1. Ambil ID Organisasi user
+        const { data: memberData, error: memberError } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (memberError || !memberData) {
+            // Jika bukan anggota organisasi (misal Platform Admin), kita anggap valid
+            return { isValid: true };
+        }
+
+        const orgId = memberData.organization_id;
+
+        // 2. Cek Langganan Terakhir
+        const { data: subData, error: subError } = await supabase
+            .from('organization_subscriptions')
+            .select('end_date, status')
+            .eq('organization_id', orgId)
+            .eq('status', 'active')
+            .order('end_date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (subError) {
+            console.error('RBAC: Gagal cek langganan:', subError);
+            return { isValid: false, message: 'Gagal memverifikasi status langganan.' };
+        }
+
+        if (!subData) {
+            return { isValid: false, message: 'Belum memiliki paket aktif. Silakan lakukan aktivasi.' };
+        }
+
+        const now = new Date();
+        const endDate = new Date(subData.end_date);
+
+        if (now > endDate) {
+            return { isValid: false, message: 'Masa aktif paket Anda telah berakhir.' };
+        }
+
+        return { isValid: true };
+    } catch (err) {
+        console.error('RBAC: Subscription check fatal error:', err);
+        return { isValid: false, message: 'Terjadi kesalahan sistem saat memverifikasi paket.' };
+    }
+};

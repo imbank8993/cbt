@@ -5,7 +5,7 @@ import MobileNav from '@/app/components/MobileNav';
 import { usePathname, useRouter } from 'next/navigation';
 import { Menu, Bell, Loader2, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { Role, getUserRole, getDashboardPath } from '@/lib/rbac';
+import { Role, getUserRole, getDashboardPath, checkOrganizationSubscription } from '@/lib/rbac';
 
 export default function DashboardLayout({
     children,
@@ -41,6 +41,15 @@ export default function DashboardLayout({
                 }
 
                 setUserRole(role);
+
+                // 2.5 Subscription Check (Except for Platform Admin)
+                if (role !== 'Admin') {
+                    const subStatus = await checkOrganizationSubscription(session.user.id);
+                    if (!subStatus.isValid && !pathname.includes('/dashboard/expired')) {
+                        router.push(`/dashboard/expired?message=${encodeURIComponent(subStatus.message || '')}`);
+                        return;
+                    }
+                }
 
                 // 3. Security Check: Path Verification
                 const dashboardPath = getDashboardPath(role);

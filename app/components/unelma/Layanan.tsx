@@ -195,13 +195,26 @@ const Layanan = () => {
                                     <p className="text-unelma-navy/60 leading-relaxed font-medium mb-8 flex-1">
                                         {feature.description}
                                     </p>
-                                    <button
-                                        onClick={() => handleCheckout(feature)}
-                                        className="w-full py-4 rounded-xl bg-unelma-orange text-unelma-navy font-bold flex items-center justify-center gap-2 hover:bg-orange-500 transition-all active:scale-95 shadow-lg shadow-orange-500/20"
-                                    >
-                                        <ShoppingCart size={18} />
-                                        PESAN SEKARANG
-                                    </button>
+                                    <div className="w-full space-y-3">
+                                        <button
+                                            onClick={() => {
+                                                const pricingSection = document.getElementById('pricing');
+                                                if (pricingSection) {
+                                                    pricingSection.scrollIntoView({ behavior: 'smooth' });
+                                                }
+                                            }}
+                                            className="w-full py-4 rounded-xl glass-warm border-unelma-navy/10 text-unelma-navy font-black text-[10px] uppercase tracking-widest hover:bg-unelma-navy hover:text-white transition-all active:scale-95"
+                                        >
+                                            Selengkapnya
+                                        </button>
+                                        <button
+                                            onClick={() => handleCheckout(feature)}
+                                            className="w-full py-4 rounded-xl bg-unelma-orange text-unelma-navy font-bold flex items-center justify-center gap-2 hover:bg-orange-500 transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+                                        >
+                                            <ShoppingCart size={18} />
+                                            PESAN SEKARANG
+                                        </button>
+                                    </div>
                                 </div>
                             ))
                         ) : (

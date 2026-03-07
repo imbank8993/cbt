@@ -178,7 +178,10 @@ const AdminDashboard = () => {
                     {[
                         { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
                         { id: 'layanan', label: 'Layanan', icon: <List size={16} /> },
-                        { id: 'pricing', label: 'Price List', icon: <DollarSign size={16} /> },
+                        { id: 'pricing_cbt', label: 'Paket CBT', icon: <DollarSign size={16} /> },
+                        { id: 'pricing_to', label: 'Paket TO', icon: <DollarSign size={16} /> },
+                        { id: 'pricing_bimbingan', label: 'Bimbingan', icon: <DollarSign size={16} /> },
+                        { id: 'pricing_custom', label: 'Custom App', icon: <DollarSign size={16} /> },
                         { id: 'produk', label: 'Produk', icon: <Package size={16} /> },
                     ].map((tab) => (
                         <button
@@ -195,13 +198,6 @@ const AdminDashboard = () => {
                     ))}
                 </div>
 
-                <Link
-                    href="/admin/login"
-                    className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-rose-50 text-rose-500 font-black text-[10px] uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all shadow-sm border border-rose-100"
-                >
-                    <LogOut size={16} />
-                    Log Out Platform
-                </Link>
             </div>
 
             {/* Main Content Area */}
@@ -209,7 +205,7 @@ const AdminDashboard = () => {
                 <div>
                     <h2 className="text-4xl font-black text-unelma-navy tracking-tight uppercase leading-none mb-3">
                         {activeTab === 'layanan' ? 'Layanan Hub' :
-                            activeTab === 'pricing' ? 'Price Workspace' :
+                            activeTab.startsWith('pricing') ? 'Price Workspace' :
                                 activeTab === 'produk' ? 'Product Center' : 'Panel Analytics'}
                     </h2>
                     <p className="text-unelma-navy/30 font-bold uppercase text-[10px] tracking-[0.3em] ml-1">Layanan Landing Page Real-time</p>
@@ -220,8 +216,9 @@ const AdminDashboard = () => {
                             if (activeTab === 'layanan') {
                                 setCurrentLayanan({ title: '', description: '', icon_name: 'BookOpen' });
                                 setIsLayananModalOpen(true);
-                            } else if (activeTab === 'pricing') {
-                                setCurrentPrice({ name: '', price: 0, period: 'bulan', features: [], is_popular: false });
+                            } else if (activeTab.startsWith('pricing')) {
+                                const cat = activeTab.replace('pricing_', '');
+                                setCurrentPrice({ name: '', price: 0, period: 'bulan', features: [], is_popular: false, duration_days: 30, category: cat });
                                 setIsPriceModalOpen(true);
                             } else if (activeTab === 'produk') {
                                 setCurrentProduk({ name: '', description: '', image_url: '', price: 0 });
@@ -231,7 +228,7 @@ const AdminDashboard = () => {
                         className="bg-unelma-orange hover:bg-orange-500 text-unelma-navy px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl shadow-unelma-orange/20 active:scale-95 flex items-center gap-3"
                     >
                         <Plus size={18} />
-                        TAMBAH {activeTab === 'layanan' ? 'LAYANAN' : activeTab === 'pricing' ? 'PAKET' : 'PRODUK'}
+                        TAMBAH {activeTab === 'layanan' ? 'LAYANAN' : activeTab.startsWith('pricing') ? 'PAKET' : 'PRODUK'}
                     </button>
                 )}
             </header>
@@ -316,9 +313,9 @@ const AdminDashboard = () => {
                         </div>
                     )}
 
-                    {activeTab === 'pricing' && (
+                    {activeTab.startsWith('pricing') && (
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                            {prices.map((item, i) => (
+                            {prices.filter(p => p.category === activeTab.replace('pricing_', '') || (!p.category && activeTab === 'pricing_cbt')).map((item, i) => (
                                 <motion.div
                                     key={item.id}
                                     initial={{ opacity: 0, scale: 0.95 }}
@@ -333,7 +330,17 @@ const AdminDashboard = () => {
                                     )}
 
                                     <div className="mb-10">
-                                        <h4 className="text-2xl font-black text-unelma-navy tracking-tight uppercase mb-2">{item.name}</h4>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h4 className="text-2xl font-black text-unelma-navy tracking-tight uppercase">{item.name}</h4>
+                                            <div className="flex flex-col items-end">
+                                                <div className="bg-blue-50 text-unelma-navy px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-blue-100 mb-1">
+                                                    {item.duration_days} HARI
+                                                </div>
+                                                <div className="bg-slate-50 text-slate-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100">
+                                                    {item.category?.toUpperCase() || 'CBT'}
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-3xl font-black text-unelma-navy">Rp {item.price.toLocaleString('id-ID')}</span>
                                             <span className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">/ {item.period}</span>
@@ -509,9 +516,26 @@ const AdminDashboard = () => {
                                         <input value={currentPrice.period} onChange={e => setCurrentPrice({ ...currentPrice, period: e.target.value })} className="w-full bg-[#f8faff] border border-unelma-navy/5 rounded-2xl p-4 focus:ring-2 focus:ring-unelma-orange/20 outline-none font-bold text-unelma-navy" placeholder="bulan / tahun" required />
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-unelma-navy/40 uppercase tracking-widest ml-2">Fitur (Pisahkan dengan koma)</label>
-                                    <textarea value={currentPrice.features?.join(', ')} onChange={e => setCurrentPrice({ ...currentPrice, features: e.target.value.split(',').map(f => f.trim()) })} className="w-full bg-[#f8faff] border border-unelma-navy/5 rounded-2xl p-4 focus:ring-2 focus:ring-unelma-orange/20 outline-none font-medium text-unelma-navy h-24" placeholder="Fitur 1, Fitur 2, ..." required />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-unelma-navy/40 uppercase tracking-widest ml-2">Kategori</label>
+                                        <select value={currentPrice.category} onChange={e => setCurrentPrice({ ...currentPrice, category: e.target.value })} className="w-full bg-[#f8faff] border border-unelma-navy/5 rounded-2xl p-4 focus:ring-2 focus:ring-unelma-orange/20 outline-none font-bold text-unelma-navy">
+                                            <option value="cbt">Unelma CBT</option>
+                                            <option value="to">Paket TO</option>
+                                            <option value="bimbingan">Bimbingan</option>
+                                            <option value="custom">Aplikasi Custom</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-unelma-navy/40 uppercase tracking-widest ml-2">Durasi (Hari)</label>
+                                        <input
+                                            type="number"
+                                            value={currentPrice.duration_days || 30}
+                                            onChange={e => setCurrentPrice({ ...currentPrice, duration_days: parseInt(e.target.value) || 30 })}
+                                            className="w-full bg-[#f8faff] border border-unelma-navy/5 rounded-2xl p-4 focus:ring-2 focus:ring-unelma-orange/20 outline-none font-bold text-unelma-navy"
+                                            required
+                                        />
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-3 px-2">
                                     <input type="checkbox" id="popular" checked={currentPrice.is_popular} onChange={e => setCurrentPrice({ ...currentPrice, is_popular: e.target.checked })} className="w-5 h-5 accent-unelma-orange" />

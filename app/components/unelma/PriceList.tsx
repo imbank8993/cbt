@@ -16,6 +16,7 @@ declare global {
 const PriceList = () => {
     const [prices, setPrices] = useState<PricelistItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeCategory, setActiveCategory] = useState('all');
 
     useEffect(() => {
         const loadData = async () => {
@@ -138,51 +139,85 @@ const PriceList = () => {
                     <p className="text-unelma-navy/60 text-xl font-medium">
                         Pilih paket yang paling sesuai dengan kebutuhan institusi pendidikan Anda.
                     </p>
+
+                    {/* Category Selector */}
+                    <div className="flex flex-wrap justify-center gap-4 mt-12">
+                        {[
+                            { id: 'all', label: 'Semua Paket' },
+                            { id: 'cbt', label: 'Unelma CBT' },
+                            { id: 'to', label: 'Paket TO' },
+                            { id: 'bimbingan', label: 'Bimbingan' },
+                            { id: 'custom', label: 'Aplikasi Custom' }
+                        ].map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setActiveCategory(cat.id)}
+                                className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all ${activeCategory === cat.id
+                                    ? 'bg-unelma-navy text-white shadow-lg'
+                                    : 'glass-warm text-unelma-navy/40 hover:text-unelma-navy'
+                                    }`}
+                            >
+                                {cat.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {prices.map((plan) => (
-                        <div
-                            key={plan.id}
-                            className={`glass-warm p-10 rounded-[3rem] relative flex flex-col transition-all duration-500 hover:shadow-2xl ${plan.is_popular ? 'border-2 border-unelma-orange shadow-xl scale-105 z-10' : 'border-unelma-navy/5'}`}
-                        >
-                            {plan.is_popular && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-unelma-orange text-unelma-navy px-6 py-2 rounded-full text-sm font-black tracking-widest uppercase shadow-lg">
-                                    Paling Populer
-                                </div>
-                            )}
-
-                            <div className="mb-10">
-                                <h3 className="text-2xl font-black text-unelma-navy mb-4 tracking-tighter uppercase">{plan.name}</h3>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-sm font-bold text-unelma-navy/40">Rp</span>
-                                    <span className="text-5xl font-black text-unelma-navy tracking-tighter">
-                                        {plan.price.toLocaleString('id-ID')}
-                                    </span>
-                                    <span className="text-unelma-navy/40 font-bold">/{plan.period}</span>
-                                </div>
-                            </div>
-
-                            <ul className="space-y-4 mb-12 flex-1">
-                                {plan.features.map((feature, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-unelma-navy/60 font-medium">
-                                        <div className="w-5 h-5 rounded-full bg-unelma-navy/10 flex items-center justify-center shrink-0">
-                                            <Check size={12} className="text-unelma-navy" />
-                                        </div>
-                                        {feature}
-                                    </li>
-                                ))}
-                            </ul>
-
-                            <button
-                                onClick={() => handleCheckout(plan)}
-                                className={`w-full py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 ${plan.is_popular ? 'btn-unelma' : 'bg-unelma-navy text-white hover:bg-unelma-navy-light'}`}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {prices
+                        .filter(p => activeCategory === 'all' || p.category === activeCategory || (!p.category && activeCategory === 'cbt'))
+                        .map((plan) => (
+                            <div
+                                key={plan.id}
+                                className={`glass-warm p-10 rounded-[3rem] relative flex flex-col transition-all duration-500 hover:shadow-2xl ${plan.is_popular ? 'border-2 border-unelma-orange shadow-xl scale-105 z-10' : 'border-unelma-navy/5'}`}
                             >
-                                <Zap size={20} />
-                                PILIH PAKET
-                            </button>
-                        </div>
-                    ))}
+                                {plan.is_popular && (
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-unelma-orange text-unelma-navy px-6 py-2 rounded-full text-[10px] font-black tracking-widest uppercase shadow-lg">
+                                        Paling Populer
+                                    </div>
+                                )}
+
+                                <div className="mb-10">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="text-2xl font-black text-unelma-navy tracking-tighter uppercase leading-tight">{plan.name}</h3>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <span className="bg-unelma-navy/5 text-unelma-navy px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-unelma-navy/5 whitespace-nowrap">
+                                                {plan.duration_days} HARI
+                                            </span>
+                                            <span className="bg-slate-50 text-slate-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-100 whitespace-nowrap">
+                                                {plan.category?.toUpperCase() || 'CBT'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-sm font-bold text-unelma-navy/40">Rp</span>
+                                        <span className="text-4xl font-black text-unelma-navy tracking-tighter">
+                                            {plan.price.toLocaleString('id-ID')}
+                                        </span>
+                                        <span className="text-unelma-navy/40 font-bold">/{plan.period}</span>
+                                    </div>
+                                </div>
+
+                                <ul className="space-y-4 mb-12 flex-1">
+                                    {plan.features.map((feature, i) => (
+                                        <li key={i} className="flex items-start gap-3 text-unelma-navy/60 font-medium text-sm">
+                                            <div className="w-5 h-5 rounded-full bg-unelma-orange/10 flex items-center justify-center shrink-0 mt-0.5">
+                                                <Check size={12} className="text-unelma-orange" />
+                                            </div>
+                                            {feature}
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                <button
+                                    onClick={() => handleCheckout(plan)}
+                                    className={`w-full py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-2 ${plan.is_popular ? 'btn-unelma' : 'bg-unelma-navy text-white hover:bg-unelma-navy-light'}`}
+                                >
+                                    <Zap size={20} />
+                                    PILIH PAKET
+                                </button>
+                            </div>
+                        ))}
                 </div>
             </div>
         </section>

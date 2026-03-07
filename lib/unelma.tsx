@@ -25,6 +25,8 @@ export interface PricelistItem {
     period: string;
     features: string[];
     is_popular: boolean;
+    duration_days: number;
+    category: string;
 }
 
 // Helper to get Icon by name
