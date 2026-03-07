@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Konfigurasi direktori dasar penyimpanan
 $baseDir = __DIR__ . '/uploads';
-$baseUrl = 'https://unelma.id/uploads';
+$baseUrl = 'https://unelma.id/storage';
 
 // Bikin folder jika belum ada
 if (!is_dir($baseDir)) {

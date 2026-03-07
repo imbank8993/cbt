@@ -3,7 +3,7 @@
  * (unelma.id/api-upload.php)
  */
 
-const API_URL = 'https://unelma.id/api-upload.php'; // Ganti jika struktur folder berubah
+const API_URL = '/api-upload.php'; // Ini akan diproxy oleh Next.js ke icgowa.sch.id
 
 /**
  * Upload file ke hosting eksternal
