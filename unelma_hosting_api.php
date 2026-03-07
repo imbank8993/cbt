@@ -1,7 +1,7 @@
 <?php
 /**
  * Unelma File Uploader API
- * Simpan file ini di server Anda (icgowa.sch.id/unelma.id) dengan nama misalnya: api-upload.php
+ * Simpan file ini di server Anda (unelma.id) dengan nama misalnya: api-upload.php
  * Pastikan folder 'uploads' atau folder target memiliki hak akses write (chmod 755/777).
  */
 
@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Konfigurasi direktori dasar penyimpanan
 $baseDir = __DIR__ . '/uploads';
-$baseUrl = 'https://icgowa.sch.id/unelma.id/uploads';
+$baseUrl = 'https://unelma.id/uploads';
 
 // Bikin folder jika belum ada
 if (!is_dir($baseDir)) {

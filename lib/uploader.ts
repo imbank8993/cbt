@@ -1,9 +1,9 @@
 /**
  * Helper untuk mengunggah dan menghapus file dari hosting external 
- * (icgowa.sch.id/unelma.id/api-upload.php)
+ * (unelma.id/api-upload.php)
  */
 
-const API_URL = 'https://icgowa.sch.id/unelma.id/api-upload.php'; // Ganti jika struktur folder berubah
+const API_URL = 'https://unelma.id/api-upload.php'; // Ganti jika struktur folder berubah
 
 /**
  * Upload file ke hosting eksternal

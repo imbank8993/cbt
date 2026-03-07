@@ -117,9 +117,9 @@ export default function SettingsPage() {
 
         setSavingProfile(true);
         try {
-            // Hapus file lama jika punya URL dari hosting eksternal (mengandung icgowa.sch.id)
+            // Hapus file lama jika punya URL dari hosting eksternal
             let oldUrl = '';
-            if (avatarUrl && avatarUrl.includes('icgowa.sch.id')) {
+            if (avatarUrl && (avatarUrl.includes('icgowa.sch.id') || avatarUrl.includes('unelma.id'))) {
                 oldUrl = avatarUrl;
             }
 

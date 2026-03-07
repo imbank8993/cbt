@@ -88,7 +88,7 @@ export default function QuestionBankPage() {
         setUploadingImage(true);
         try {
             let oldUrl = '';
-            if (formData.imageUrl && formData.imageUrl.includes('icgowa.sch.id')) {
+            if (formData.imageUrl && (formData.imageUrl.includes('icgowa.sch.id') || formData.imageUrl.includes('unelma.id'))) {
                 oldUrl = formData.imageUrl;
             }
 
