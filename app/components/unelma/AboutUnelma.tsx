@@ -22,13 +22,13 @@ const AboutUnelma = () => {
                             <span className="text-gradient-warm">UNELMA.</span>
                         </h2>
                         <p className="text-xl text-unelma-navy/70 font-medium leading-relaxed mb-12">
-                            Unelma bukan sekadar platform belajar online. Kami adalah wadah aspirasi bagi setiap anak bangsa untuk berani bermimpi dan bertumbuh dalam ekosistem yang suportif.
+                            Unelma hadir sebagai mitra strategis dalam transformasi pendidikan digital. Kami menggabungkan bimbingan belajar berkualitas dengan teknologi mutakhir untuk memberdayakan setiap Madrasah dan siswa di Indonesia.
                         </p>
 
                         <div className="space-y-8">
                             {[
-                                { icon: <ShieldCheck className="text-unelma-orange" />, title: 'Visi Inklusif', desc: 'Menjangkau setiap pelosok negeri dengan pendidikan berkualitas.' },
-                                { icon: <Target className="text-unelma-orange" />, title: 'Misi Berkelanjutan', desc: 'Memberdayakan talenta lokal untuk menjadi tutor kelas dunia.' },
+                                { icon: <ShieldCheck className="text-unelma-navy" />, title: 'Teknologi Terpercaya', desc: 'Menghadirkan solusi CBT dan manajemen Madrasah yang aman serta handal.' },
+                                { icon: <Target className="text-unelma-navy" />, title: 'Prestasi Nyata', desc: 'Fokus pada hasil maksimal bagi siswa untuk menembus sekolah impian.' },
                             ].map((item, i) => (
                                 <div key={i} className="flex gap-6 items-start">
                                     <div className="w-12 h-12 glass-warm rounded-xl flex items-center justify-center shrink-0 border border-unelma-navy/5">

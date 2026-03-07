@@ -36,7 +36,7 @@ const Testimoni = () => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         whileInView={{ opacity: 1, scale: 1 }}
-                        className="inline-flex items-center space-x-2 px-6 py-2 rounded-full glass-warm border-unelma-orange/20 text-unelma-orange text-sm font-bold mb-8"
+                        className="inline-flex items-center space-x-2 px-6 py-2 rounded-full glass-warm border-unelma-navy/10 text-unelma-navy text-sm font-bold mb-8"
                     >
                         <Star size={16} fill="currentColor" />
                         <span>Cerita dari Keluarga Unelma</span>
@@ -58,7 +58,7 @@ const Testimoni = () => {
                             transition={{ delay: i * 0.1 }}
                             className="glass-warm p-10 rounded-[3rem] border-unelma-navy/5 relative group shadow-sm hover:shadow-xl transition-all duration-500"
                         >
-                            <Quote className="absolute top-8 right-8 text-unelma-orange/10 group-hover:text-unelma-orange/20 transition-colors" size={60} />
+                            <Quote className="absolute top-8 right-8 text-unelma-navy/5 group-hover:text-unelma-navy/10 transition-colors" size={60} />
 
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="w-14 h-14 bg-unelma-orange rounded-2xl flex items-center justify-center font-black text-unelma-navy text-xl soft-shadow">
@@ -76,7 +76,7 @@ const Testimoni = () => {
 
                             <div className="mt-8 flex gap-1">
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star key={star} size={16} fill="#f8a01b" className="text-unelma-orange" />
+                                    <Star key={star} size={16} fill="#030c4d" className="text-unelma-navy" />
                                 ))}
                             </div>
                         </motion.div>

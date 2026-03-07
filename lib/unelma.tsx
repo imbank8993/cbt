@@ -7,6 +7,7 @@ export interface LayananItem {
     title: string;
     description: string;
     icon_name: string;
+    category?: string;
 }
 
 export interface TestimoniItem {
@@ -29,11 +30,11 @@ export interface PricelistItem {
 // Helper to get Icon by name
 export const getIcon = (name: string, size = 28) => {
     switch (name) {
-        case 'BookOpen': return <BookOpen className="text-unelma-orange" size={size} />;
-        case 'Users': return <Users className="text-unelma-orange" size={size} />;
-        case 'Star': return <Star className="text-unelma-orange" size={size} />;
-        case 'MessageCircle': return <MessageCircle className="text-unelma-orange" size={size} />;
-        default: return <BookOpen className="text-unelma-orange" size={size} />;
+        case 'BookOpen': return <BookOpen className="text-unelma-navy" size={size} />;
+        case 'Users': return <Users className="text-unelma-navy" size={size} />;
+        case 'Star': return <Star className="text-unelma-navy" size={size} />;
+        case 'MessageCircle': return <MessageCircle className="text-unelma-navy" size={size} />;
+        default: return <BookOpen className="text-unelma-navy" size={size} />;
     }
 };
 

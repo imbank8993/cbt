@@ -69,7 +69,7 @@ const Header = () => {
                     <div className="hidden md:block">
                         <Link href="/login">
                             <button className="btn-unelma px-8 py-3 rounded-full text-sm font-black tracking-tighter shadow-xl shadow-unelma-orange/20">
-                                CBT (Login)
+                                Login CBT
                             </button>
                         </Link>
                     </div>
@@ -106,7 +106,7 @@ const Header = () => {
                             ))}
                             <Link href="/login" className="w-full">
                                 <button className="btn-unelma w-full py-4 rounded-xl mt-4 font-black">
-                                    CBT (Login)
+                                    Login CBT
                                 </button>
                             </Link>
                         </div>
