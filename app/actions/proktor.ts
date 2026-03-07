@@ -637,3 +637,39 @@ export async function getAttemptFullDetailsAction(attemptId: string) {
         return null;
     }
 }
+/**
+ * Update member profile information (Name and Identity Number)
+ * This is restricted for use by Proctors or Admins
+ */
+export async function updateMemberProfileAction(userId: string, data: { fullName?: string, identityNumber?: string }) {
+    const supabaseAdmin = getSupabaseAdmin();
+    try {
+        const updates: any = {};
+        if (data.fullName !== undefined) updates.full_name = data.fullName;
+        if (data.identityNumber !== undefined) updates.identity_number = data.identityNumber;
+
+        const { error } = await supabaseAdmin
+            .from('profiles')
+            .update(updates)
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        // Also update auth metadata for consistency
+        const metadataUpdate: any = {};
+        if (data.fullName) metadataUpdate.full_name = data.fullName;
+        if (data.identityNumber) metadataUpdate.identity_number = data.identityNumber;
+
+        if (Object.keys(metadataUpdate).length > 0) {
+            await supabaseAdmin.auth.admin.updateUserById(userId, {
+                user_metadata: metadataUpdate
+            });
+        }
+
+        revalidatePath('/dashboard/proktor/members');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Proctor: Update member profile error:', error);
+        return { success: false, error: error.message };
+    }
+}

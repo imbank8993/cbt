@@ -7,7 +7,7 @@ import {
     MoreVertical, Trash2, Shield,
     School, GraduationCap, X,
     Loader2, Check, Download, Activity, Upload, AlertCircle,
-    Power, UserMinus
+    Power, UserMinus, Pencil
 } from 'lucide-react';
 import {
     getProctorOrganization,
@@ -17,7 +17,8 @@ import {
     createClassAction,
     assignStudentToClassAction,
     importMembersAction,
-    toggleMemberStatusAction
+    toggleMemberStatusAction,
+    updateMemberProfileAction
 } from '@/app/actions/proktor';
 import { resetMemberPasswordAction } from '@/app/actions/user';
 import { supabase } from '@/lib/supabase';
@@ -49,6 +50,13 @@ const MembersPage = () => {
         role: 'Siswa' as any,
         identityNumber: '',
         password: ''
+    });
+
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedMemberForEdit, setSelectedMemberForEdit] = useState<any>(null);
+    const [editFormData, setEditFormData] = useState({
+        fullName: '',
+        identityNumber: ''
     });
 
     useEffect(() => {
@@ -138,6 +146,23 @@ const MembersPage = () => {
             setResetPasswordValue('');
         } else {
             alert('Gagal meriset password: ' + result.error);
+        }
+        setIsSubmitting(false);
+    };
+
+    const handleUpdateMemberProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedMemberForEdit) return;
+        setIsSubmitting(true);
+        const result = await updateMemberProfileAction(selectedMemberForEdit.userId, {
+            fullName: editFormData.fullName,
+            identityNumber: editFormData.identityNumber
+        });
+        if (result.success) {
+            setIsEditModalOpen(false);
+            await loadData();
+        } else {
+            alert('Gagal memperbarui profil: ' + result.error);
         }
         setIsSubmitting(false);
     };
@@ -393,6 +418,20 @@ const MembersPage = () => {
                                             )}
                                         </td>
                                         <td className="px-6 py-6 bg-slate-50/80 rounded-r-3xl border-y border-r border-slate-100 group-hover:bg-slate-100/80 text-right">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedMemberForEdit(member);
+                                                    setEditFormData({
+                                                        fullName: member.fullName,
+                                                        identityNumber: member.identityNumber === '-' ? '' : member.identityNumber
+                                                    });
+                                                    setIsEditModalOpen(true);
+                                                }}
+                                                className="p-2 hover:bg-slate-200 transition-colors text-slate-400 hover:text-primary mr-2 rounded-xl border border-transparent hover:border-slate-300 bg-white shadow-sm"
+                                                title="Edit Profil"
+                                            >
+                                                <Pencil size={18} />
+                                            </button>
                                             <button
                                                 onClick={() => handleToggleStatus(member.id, member.is_active)}
                                                 className={`p-2 transition-colors mr-2 rounded-xl border border-transparent shadow-sm ${member.is_active ? 'hover:bg-orange-50 text-slate-400 hover:text-orange-500 hover:border-orange-100 bg-white' : 'hover:bg-emerald-50 text-emerald-400 hover:text-emerald-500 hover:border-emerald-100 bg-white'}`}
@@ -808,7 +847,58 @@ const MembersPage = () => {
                     </div>
                 )}
             </AnimatePresence>
-        </div >
+
+            {/* Edit Profile Modal */}
+            <AnimatePresence>
+                {isEditModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsEditModalOpen(false)} />
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-md rounded-[2.5rem] p-10 relative z-10 border border-slate-100 shadow-2xl">
+                            <button onClick={() => setIsEditModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-primary transition-all"><X size={24} /></button>
+
+                            <div className="mb-0">
+                                <h3 className="text-2xl font-black text-primary tracking-tight uppercase mb-1">Edit Profil Anggota</h3>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">Ubah profil {selectedMemberForEdit?.role}: <span className="text-primary">{selectedMemberForEdit?.fullName}</span></p>
+                            </div>
+
+                            <form onSubmit={handleUpdateMemberProfile} className="space-y-6 mt-8">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nama Lengkap</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        value={editFormData.fullName}
+                                        onChange={e => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter shadow-inner"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
+                                        {selectedMemberForEdit?.role === 'Guru' ? 'NIP' : (selectedMemberForEdit?.role === 'Siswa' ? 'NISN' : 'Nomor Identitas')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.identityNumber}
+                                        onChange={e => setEditFormData({ ...editFormData, identityNumber: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary tracking-tighter shadow-inner"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="w-full py-5 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-2 mt-4 hover:bg-primary-light transition-all shadow-lg shadow-primary/20 disabled:opacity-50 uppercase tracking-widest active:scale-95"
+                                >
+                                    {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
+                                    SIMPAN PERUBAHAN
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
 

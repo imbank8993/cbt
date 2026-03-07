@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { updateUserProfileAction, updateUserPasswordAction } from '@/app/actions/user';
 import { uploadToHosting, deleteFromHosting } from '@/lib/uploader';
 import { useRouter } from 'next/navigation';
+import { getUserRole, Role } from '@/lib/rbac';
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -25,6 +26,7 @@ export default function SettingsPage() {
     const [savingProfile, setSavingProfile] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [role, setRole] = useState<Role | null>(null);
 
     // Profile Form
     const [fullName, setFullName] = useState('');
@@ -50,6 +52,10 @@ export default function SettingsPage() {
                     setFullName(profile.full_name || '');
                     setAvatarUrl(profile.avatar_url || '');
                 }
+
+                // Ambil Role
+                const uRole = await getUserRole(user.id);
+                setRole(uRole);
             }
             setLoading(false);
         };
@@ -215,15 +221,27 @@ export default function SettingsPage() {
                         </div>
 
                         <form onSubmit={handleUpdateProfile} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nama Lengkap</label>
-                                <input
-                                    required
-                                    type="text"
-                                    value={fullName}
-                                    onChange={e => setFullName(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter"
-                                />
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nama Lengkap</label>
+                                    <input
+                                        required
+                                        disabled={role !== 'Admin' && role !== 'Proktor'}
+                                        type="text"
+                                        value={fullName}
+                                        onChange={e => setFullName(e.target.value)}
+                                        className={`w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 outline-none font-bold text-primary uppercase tracking-tighter ${role === 'Admin' || role === 'Proktor' ? 'focus:ring-2 focus:ring-primary/20' : 'opacity-60 cursor-not-allowed'}`}
+                                    />
+                                </div>
+
+                                {role !== 'Admin' && role !== 'Proktor' && (
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl flex items-start gap-3">
+                                        <AlertCircle className="text-slate-400 mt-0.5" size={16} />
+                                        <p className="text-[10px] font-bold text-slate-500 leading-relaxed uppercase tracking-tighter">
+                                            Nama profil hanya dapat diubah oleh administrator atau proktor sekolah Anda. Silakan hubungi proktor jika terdapat kesalahan penulisan nama.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             <button
