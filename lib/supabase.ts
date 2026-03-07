@@ -10,6 +10,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
     console.error('CRITICAL: Supabase Environment Variables are MISSING!');
 }
 
+export const isSupabaseConfigured = !!supabaseUrl && !!supabaseAnonKey && !supabaseUrl.includes('placeholder');
+
 export const supabase = createClient(
     supabaseUrl || 'https://placeholder.supabase.co',
     supabaseAnonKey || 'placeholder'

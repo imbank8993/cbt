@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Role, getDashboardPath, getUserRole } from '@/lib/rbac';
 
@@ -36,6 +36,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setErrorMsg('');
+
+    // Check for missing env vars (placeholder check)
+    if (!isSupabaseConfigured) {
+      setErrorMsg('Peringatan: Variabel lingkungan Supabase (URL/KEY) BELUM TERPASANG di Vercel. Pastikan NEXT_PUBLIC_SUPABASE_URL sudah ada di Settings Vercel.');
+      setLoading(false);
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
