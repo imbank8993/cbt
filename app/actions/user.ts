@@ -1,3 +1,5 @@
+"use server";
+
 import { getSupabaseAdmin, supabase } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 import { Role } from '@/lib/rbac';
