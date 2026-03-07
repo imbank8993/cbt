@@ -162,41 +162,55 @@ function GradingContent() {
 
     return (
         <div className="space-y-8 pb-20 animate-in fade-in duration-700">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h1 className="text-3xl font-black text-rose-500 uppercase italic tracking-tight mb-1">
-                        Report & Penilaian
-                    </h1>
-                    <p className="text-slate-500 font-medium">Laporan nilai akhir siswa beserta statistik analisis butir soal.</p>
-                </div>
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-rose-600 via-rose-500 to-orange-500 text-white shadow-xl shadow-rose-500/10 mb-10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 blur-[60px] -ml-16 -mb-16 rounded-full"></div>
 
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <select
-                        value={selectedExamId}
-                        onChange={(e) => setSelectedExamId(e.target.value)}
-                        className="flex-1 md:w-64 bg-white border border-slate-200 text-slate-700 focus:ring-2 focus:ring-rose-500/20 outline-none p-3 rounded-2xl font-bold uppercase tracking-tight shadow-sm"
-                    >
-                        <option value="">-- Pilih Ujian Yang Diawasi --</option>
-                        {exams.map(exam => (
-                            <option key={exam.id} value={exam.id}>{exam.title}</option>
-                        ))}
-                    </select>
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="text-center md:text-left">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-white/10"
+                        >
+                            <BarChart3 size={10} className="text-white" /> Exam Grading & Reports
+                        </motion.div>
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
+                            Hasil & <span className="text-orange-200">Penilaian</span>
+                        </h1>
+                        <p className="text-white/60 font-bold max-w-sm text-sm uppercase tracking-tight">
+                            Laporan nilai dan analisis butir soal
+                        </p>
+                    </div>
 
-                    <button
-                        onClick={handleRefresh}
-                        disabled={isRefreshing || !selectedExamId}
-                        className="bg-white border border-slate-200 text-slate-500 hover:text-rose-500 p-3 rounded-full hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
-                        title="Segarkan Data"
-                    >
-                        <RefreshCw size={20} className={isRefreshing ? "animate-spin text-rose-500" : ""} />
-                    </button>
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <select
+                            value={selectedExamId}
+                            onChange={(e) => setSelectedExamId(e.target.value)}
+                            className="flex-1 md:w-72 bg-white/10 backdrop-blur-md border border-white/20 text-white focus:ring-2 focus:ring-white outline-none p-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg"
+                        >
+                            <option value="" className="text-slate-900">-- Pilih Ujian --</option>
+                            {exams.map(exam => (
+                                <option key={exam.id} value={exam.id} className="text-slate-900">{exam.title}</option>
+                            ))}
+                        </select>
+
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isRefreshing || !selectedExamId}
+                            className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white hover:text-rose-500 p-4 rounded-2xl transition-all shadow-lg disabled:opacity-50"
+                            title="Segarkan Data"
+                        >
+                            <RefreshCw size={20} className={isRefreshing ? "animate-spin" : ""} />
+                        </button>
+                    </div>
                 </div>
             </header>
 
             {!selectedExamId ? (
                 <div className="py-20 text-center bg-white border border-slate-100 rounded-[2rem]">
                     <BarChart3 size={48} className="text-slate-200 mx-auto mb-4" />
-                    <p className="text-slate-400 font-bold italic uppercase tracking-tighter">Pilih ujian di atas untuk melihat rapor</p>
+                    <p className="text-slate-400 font-bold uppercase tracking-tighter">Pilih ujian di atas untuk melihat rapor</p>
                 </div>
             ) : (
                 <>
@@ -247,7 +261,7 @@ function GradingContent() {
                                             <tbody>
                                                 {attempts.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={5} className="p-8 text-center text-slate-400 italic font-medium">Belum ada siswa yang mengerjakan ujian ini.</td>
+                                                        <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">Belum ada siswa yang mengerjakan ujian ini.</td>
                                                     </tr>
                                                 ) : (
                                                     attempts.map((att) => (
@@ -305,7 +319,7 @@ function GradingContent() {
                                             <tbody>
                                                 {analysis.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={5} className="p-8 text-center text-slate-400 italic font-medium">Belum ada data analisis. Pastikan ujian sudah dikerjakan siswa.</td>
+                                                        <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">Belum ada data analisis. Pastikan ujian sudah dikerjakan siswa.</td>
                                                     </tr>
                                                 ) : (
                                                     analysis.map((anl) => {

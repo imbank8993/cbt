@@ -161,41 +161,55 @@ function MonitoringContent() {
 
     return (
         <div className="space-y-8 pb-20 animate-in fade-in duration-700">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h1 className="text-3xl font-black text-primary uppercase italic tracking-tight mb-1">
-                        Monitoring & Evaluasi
-                    </h1>
-                    <p className="text-slate-500 font-medium">Pantau hasil pengerjaan dan analisis tingkat kesulitan soal.</p>
-                </div>
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary-light to-blue-500 text-white shadow-xl shadow-primary/10 mb-10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 blur-[60px] -ml-16 -mb-16 rounded-full"></div>
 
-                <div className="flex items-center gap-4 w-full md:w-auto">
-                    <select
-                        value={selectedExamId}
-                        onChange={(e) => setSelectedExamId(e.target.value)}
-                        className="flex-1 md:w-64 bg-white border border-slate-200 text-slate-700 focus:ring-2 focus:ring-primary/20 outline-none p-3 rounded-2xl font-bold uppercase tracking-tight shadow-sm"
-                    >
-                        <option value="">-- Pilih Ujian Yang Diawasi --</option>
-                        {exams.map(exam => (
-                            <option key={exam.id} value={exam.id}>{exam.title}</option>
-                        ))}
-                    </select>
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="text-center md:text-left">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-white/10"
+                        >
+                            <BarChart3 size={10} className="text-white" /> Monitoring & Evaluation
+                        </motion.div>
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
+                            Log & <span className="text-blue-200">Monitoring</span>
+                        </h1>
+                        <p className="text-white/60 font-bold max-w-sm text-sm uppercase tracking-tight">
+                            Pantau pergerakan dan analisis hasil ujian
+                        </p>
+                    </div>
 
-                    <button
-                        onClick={handleRefresh}
-                        disabled={isRefreshing || !selectedExamId}
-                        className="bg-white border border-slate-200 text-slate-500 hover:text-primary p-3 rounded-full hover:bg-slate-50 transition-all shadow-sm disabled:opacity-50"
-                        title="Segarkan Data"
-                    >
-                        <RefreshCw size={20} className={isRefreshing ? "animate-spin text-primary" : ""} />
-                    </button>
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <select
+                            value={selectedExamId}
+                            onChange={(e) => setSelectedExamId(e.target.value)}
+                            className="flex-1 md:w-72 bg-white/10 backdrop-blur-md border border-white/20 text-white focus:ring-2 focus:ring-white outline-none p-4 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg"
+                        >
+                            <option value="" className="text-slate-900">-- Pilih Ujian --</option>
+                            {exams.map(exam => (
+                                <option key={exam.id} value={exam.id} className="text-slate-900">{exam.title}</option>
+                            ))}
+                        </select>
+
+                        <button
+                            onClick={handleRefresh}
+                            disabled={isRefreshing || !selectedExamId}
+                            className="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white hover:text-primary p-4 rounded-2xl transition-all shadow-lg disabled:opacity-50"
+                            title="Segarkan Data"
+                        >
+                            <RefreshCw size={20} className={isRefreshing ? "animate-spin" : ""} />
+                        </button>
+                    </div>
                 </div>
             </header>
 
             {!selectedExamId ? (
                 <div className="py-20 text-center bg-white border border-slate-100 rounded-[2rem]">
                     <BarChart3 size={48} className="text-slate-200 mx-auto mb-4" />
-                    <p className="text-slate-400 font-bold italic uppercase tracking-tighter">Pilih ujian di atas untuk melihat data</p>
+                    <p className="text-slate-400 font-bold uppercase tracking-tighter">Pilih ujian di atas untuk melihat data</p>
                 </div>
             ) : (
                 <>
@@ -246,7 +260,7 @@ function MonitoringContent() {
                                             <tbody>
                                                 {attempts.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={5} className="p-8 text-center text-slate-400 italic font-medium">Belum ada siswa yang mengerjakan ujian ini.</td>
+                                                        <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">Belum ada siswa yang mengerjakan ujian ini.</td>
                                                     </tr>
                                                 ) : (
                                                     attempts.map((att) => (
@@ -256,20 +270,26 @@ function MonitoringContent() {
                                                             className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-0 cursor-pointer"
                                                         >
                                                             <td className="p-4 font-bold text-slate-700">{att.profiles?.full_name || 'Tanpa Nama'}</td>
-                                                            <td className="p-4">
-                                                                <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${att.status === 'submitted' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
-                                                                    {att.status === 'submitted' ? 'SELESAI' : att.status}
+                                                            <td className="p-5">
+                                                                <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-sm border ${att.status === 'submitted' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100 animate-pulse'}`}>
+                                                                    {att.status === 'submitted' ? 'COMPLETED' : 'IN PROGRESS'}
                                                                 </span>
                                                             </td>
-                                                            <td className="p-4 text-xs font-medium text-slate-500">{att.started_at ? new Date(att.started_at).toLocaleString('id-ID', { timeStyle: 'short', dateStyle: 'short' }) : '-'}</td>
-                                                            <td className="p-4 text-xs font-medium text-slate-500">{att.finished_at ? new Date(att.finished_at).toLocaleString('id-ID', { timeStyle: 'short', dateStyle: 'short' }) : '-'}</td>
-                                                            <td className="p-4 text-right">
+                                                            <td className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">{att.started_at ? new Date(att.started_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                                                            <td className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">{att.finished_at ? new Date(att.finished_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                                                            <td className="p-5 text-right">
                                                                 {att.needs_manual_grading ? (
-                                                                    <span className="px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-500 border border-amber-100">
-                                                                        BELUM DINILAI
-                                                                    </span>
+                                                                    <div className="flex flex-col items-end gap-1">
+                                                                        <span className="px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest bg-amber-500 text-white shadow-lg shadow-amber-500/20">
+                                                                            NEEDS GRADING
+                                                                        </span>
+                                                                        <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">ESSAY PENDING</span>
+                                                                    </div>
                                                                 ) : (
-                                                                    <span className="font-black text-primary text-lg">{Number(att.total_score).toFixed(0)}</span>
+                                                                    <div className="flex flex-col items-end gap-1">
+                                                                        <span className="font-black text-primary text-2xl tracking-tighter">{Number(att.total_score).toFixed(0)}</span>
+                                                                        <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">FINAL SCORE</span>
+                                                                    </div>
                                                                 )}
                                                             </td>
                                                         </tr>
@@ -304,7 +324,7 @@ function MonitoringContent() {
                                             <tbody>
                                                 {analysis.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={5} className="p-8 text-center text-slate-400 italic font-medium">Belum ada data analisis. Pastikan ujian sudah dikerjakan siswa.</td>
+                                                        <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">Belum ada data analisis. Pastikan ujian sudah dikerjakan siswa.</td>
                                                     </tr>
                                                 ) : (
                                                     analysis.map((anl) => {

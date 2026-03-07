@@ -100,37 +100,48 @@ const TeacherExamsPage = () => {
 
     return (
         <div className="space-y-10 pb-20 animate-in fade-in duration-700">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h2 className="text-4xl font-black text-primary tracking-tight uppercase italic flex items-center gap-4">
-                        <ClipboardCheck size={36} className="text-accent" />
-                        Jadwal Ujian
-                    </h2>
-                    <p className="text-slate-400 font-medium italic uppercase tracking-tighter">Kelola dan distribusikan ujian ke kelas pengajaran Anda.</p>
-                </div>
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-xl shadow-primary/10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 blur-[60px] -ml-16 -mb-16 rounded-full"></div>
 
-                <div className="flex gap-4 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-80">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Cari ujian..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-primary focus:ring-2 focus:ring-primary/20 outline-none font-bold placeholder:text-slate-300 shadow-sm transition-all"
-                        />
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="text-center md:text-left">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-white/10"
+                        >
+                            <ClipboardCheck size={10} className="text-accent" /> Examination System
+                        </motion.div>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
+                            Jadwal <span className="text-accent">Ujian</span>
+                        </h2>
+                        <p className="text-white/60 font-bold max-w-sm text-sm uppercase tracking-tight">
+                            Kelola dan distribusikan ujian ke kelas pengajaran Anda
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                        <div className="relative w-full md:w-64">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" size={16} />
+                            <input
+                                type="text"
+                                placeholder="CARI UJIAN..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white/10 backdrop-blur-md border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/30 focus:ring-2 focus:ring-accent/50 outline-none font-black text-[9px] uppercase tracking-widest transition-all"
+                            />
+                        </div>
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="group relative bg-accent hover:bg-orange-600 text-white font-black px-8 py-4 rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-3 active:scale-95 text-[10px] uppercase tracking-widest"
+                        >
+                            <Plus size={18} className="group-hover:rotate-90 transition-transform" />
+                            BUAT UJIAN BARU
+                        </button>
                     </div>
                 </div>
             </header>
-
-            <div className="flex gap-4 mb-4">
-                <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-primary hover:bg-primary-light text-white font-black px-6 py-4 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center gap-3 active:scale-95 text-xs uppercase italic tracking-widest leading-none"
-                >
-                    <Plus size={18} /> Buat Ujian Baru
-                </button>
-            </div>
 
             {isLoading ? (
                 <div className="flex justify-center py-20">
@@ -159,7 +170,7 @@ const TeacherExamsPage = () => {
                                 </button>
                             </div>
 
-                            <h3 className="text-xl font-black text-primary italic uppercase tracking-tight mb-4 group-hover:text-accent transition-colors line-clamp-2">
+                            <h3 className="text-xl font-black text-primary uppercase tracking-tight mb-4 group-hover:text-accent transition-colors line-clamp-2">
                                 {exam.title}
                             </h3>
 
@@ -179,7 +190,7 @@ const TeacherExamsPage = () => {
                             <div className="pt-6 border-t border-slate-100">
                                 <button
                                     onClick={() => router.push('/dashboard/guru/grading')}
-                                    className="w-full bg-primary/5 text-primary border border-primary/10 hover:bg-primary hover:text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all italic shadow-sm"
+                                    className="w-full bg-primary/5 text-primary border border-primary/10 hover:bg-primary hover:text-white py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95"
                                 >
                                     Lihat Monitoring
                                 </button>
@@ -190,7 +201,7 @@ const TeacherExamsPage = () => {
                     {filteredExams.length === 0 && (
                         <div className="col-span-full py-20 text-center bg-white border border-slate-100 rounded-[2rem]">
                             <ClipboardCheck size={48} className="text-slate-200 mx-auto mb-4" />
-                            <p className="text-slate-400 font-bold italic uppercase tracking-tighter">Tidak ada ujian ditemukan</p>
+                            <p className="text-slate-400 font-bold uppercase tracking-tighter">Tidak ada ujian ditemukan</p>
                         </div>
                     )}
                 </div>
@@ -203,31 +214,31 @@ const TeacherExamsPage = () => {
                         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-md rounded-[2.5rem] p-10 relative z-10 border border-slate-100 shadow-2xl overflow-y-auto max-h-[90vh]">
                             <button onClick={() => setIsAddModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-primary transition-all bg-slate-50 p-2 rounded-full"><X size={20} /></button>
 
-                            <div className="mb-8 font-black text-primary uppercase italic">
+                            <div className="mb-8 font-black text-primary uppercase">
                                 <h3 className="text-2xl tracking-tighter mb-1">Buat Ujian Baru</h3>
-                                <p className="text-xs text-slate-500 tracking-normal non-italic font-bold">Distribusikan bank soal ke kelas Anda</p>
+                                <p className="text-xs text-slate-500 tracking-normal font-bold uppercase">Distribusikan bank soal ke kelas Anda</p>
                             </div>
 
                             <form onSubmit={handleCreateExam} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">1. Judul Ujian</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">1. Judul Ujian</label>
                                     <input
                                         required
                                         type="text"
                                         placeholder="UTS MATEMATIKA..."
                                         value={formData.title}
                                         onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic uppercase tracking-tighter placeholder:text-slate-300 shadow-inner"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter placeholder:text-slate-300 shadow-inner"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">2. Pilih Bank Soal</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">2. Pilih Bank Soal</label>
                                     <select
                                         required
                                         value={formData.bankId}
                                         onChange={e => setFormData({ ...formData, bankId: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic uppercase tracking-tighter shadow-inner"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter shadow-inner text-xs"
                                     >
                                         <option value="">Pilih Bank Soal</option>
                                         {qBanks.map(bank => (
@@ -238,34 +249,37 @@ const TeacherExamsPage = () => {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Waktu Mulai</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Waktu Mulai</label>
                                         <input
                                             type="datetime-local"
                                             value={formData.startTime}
                                             onChange={e => setFormData({ ...formData, startTime: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic shadow-inner"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary shadow-inner"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Waktu Selesai</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Waktu Selesai</label>
                                         <input
                                             type="datetime-local"
                                             value={formData.endTime}
                                             onChange={e => setFormData({ ...formData, endTime: e.target.value })}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic shadow-inner"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary shadow-inner"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">3. Durasi (Menit)</label>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">3. Durasi (Menit)</label>
                                         <input
                                             required
                                             type="number"
-                                            value={formData.duration}
-                                            onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) })}
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic shadow-inner"
+                                            value={isNaN(formData.duration) ? '' : formData.duration}
+                                            onChange={e => {
+                                                const val = parseInt(e.target.value);
+                                                setFormData({ ...formData, duration: isNaN(val) ? 0 : val });
+                                            }}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary shadow-inner"
                                         />
                                     </div>
                                     <div className="flex flex-col justify-end gap-2 pb-2">
@@ -294,7 +308,7 @@ const TeacherExamsPage = () => {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">4. Target Kelas</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">4. Target Kelas</label>
                                     <div className="grid grid-cols-2 gap-2 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
                                         {classes.map(cls => (
                                             <div
@@ -308,7 +322,7 @@ const TeacherExamsPage = () => {
                                                 className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${formData.selectedClassIds.includes(cls.id) ? 'border-primary bg-primary/5 shadow-sm' : 'border-slate-100 bg-white hover:border-slate-200 shadow-sm'}`}
                                             >
                                                 <div className="flex flex-col">
-                                                    <span className="text-[10px] font-bold text-primary uppercase italic truncate max-w-[80px]">{cls.name}</span>
+                                                    <span className="text-[10px] font-bold text-primary uppercase truncate max-w-[80px]">{cls.name}</span>
                                                     <span className="text-[8px] text-slate-400 font-black uppercase">{cls.type}</span>
                                                 </div>
                                                 <div className={`w-4 h-4 rounded flex items-center justify-center ${formData.selectedClassIds.includes(cls.id) ? 'bg-primary' : 'bg-slate-100'}`}>

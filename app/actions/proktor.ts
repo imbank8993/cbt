@@ -45,17 +45,7 @@ export async function getProctorOrganization(userId: string) {
         };
     }
 
-    // 3. Fallback for Platform Admins: give them the first org available
-    if (adminUser) {
-        const { data: firstOrg } = await supabaseAdmin.from('organizations').select('id, name').limit(1).maybeSingle();
-        if (firstOrg) {
-            return {
-                id: firstOrg.id,
-                name: firstOrg.name + ' (Admin View)'
-            };
-        }
-    }
-
+    // 3. Fallback: return null if not member and no managed_org_id
     return null;
 }
 
@@ -64,21 +54,43 @@ export async function getProctorOrganization(userId: string) {
  */
 export async function getOrganizationStats(orgId: string) {
     const supabaseAdmin = getSupabaseAdmin();
+    const now = new Date().toISOString();
+
     try {
-        const [membersCount, examsCount, activeAttempts] = await Promise.all([
+        const [membersCount, banksCount, exams] = await Promise.all([
             supabaseAdmin.from('organization_members').select('id', { count: 'exact', head: true }).eq('organization_id', orgId),
-            supabaseAdmin.from('exams').select('id', { count: 'exact', head: true }).eq('organization_id', orgId),
-            supabaseAdmin.from('exam_attempts').select('id', { count: 'exact', head: true }).eq('organization_id', orgId).eq('status', 'in_progress')
+            supabaseAdmin.from('question_banks').select('id', { count: 'exact', head: true }).eq('organization_id', orgId),
+            supabaseAdmin.from('exams').select('status, start_time, end_time').eq('organization_id', orgId)
         ]);
+
+        const examsData = exams.data || [];
+
+        const ongoing = examsData.filter(e =>
+            e.status === 'active' &&
+            (!e.start_time || e.start_time <= now) &&
+            (!e.end_time || e.end_time >= now)
+        ).length;
+
+        const upcoming = examsData.filter(e =>
+            e.status === 'active' &&
+            e.start_time && e.start_time > now
+        ).length;
+
+        const finished = examsData.filter(e =>
+            e.status === 'finished' ||
+            (e.status === 'active' && e.end_time && e.end_time < now)
+        ).length;
 
         return {
             totalMembers: membersCount.count || 0,
-            totalExams: examsCount.count || 0,
-            activeAttempts: activeAttempts.count || 0
+            totalBanks: banksCount.count || 0,
+            ongoingExams: ongoing,
+            upcomingExams: upcoming,
+            finishedExams: finished
         };
     } catch (error) {
         console.error('Proctor: Stats fetch error:', error);
-        return { totalMembers: 0, totalExams: 0, activeAttempts: 0 };
+        return { totalMembers: 0, totalBanks: 0, ongoingExams: 0, upcomingExams: 0, finishedExams: 0 };
     }
 }
 
@@ -92,8 +104,10 @@ export async function listOrganizationMembers(orgId: string) {
         .select(`
             id,
             user_id,
+            is_active,
             profiles (
                 full_name,
+                identity_number,
                 class_members (
                     classes (id, name, type)
                 )
@@ -119,11 +133,33 @@ export async function listOrganizationMembers(orgId: string) {
     return data.map((m: any) => ({
         id: m.id,
         userId: m.user_id,
+        is_active: m.is_active ?? true,
         fullName: m.profiles?.full_name || 'No Name',
+        identityNumber: m.profiles?.identity_number || '-',
         email: emailMap.get(m.user_id) || '-',
         role: (m.member_roles as any)?.[0]?.roles?.name || 'Siswa',
         classes: (m.profiles?.class_members as any)?.map((cm: any) => cm.classes) || []
     }));
+}
+
+/**
+ * Toggle member active status
+ */
+export async function toggleMemberStatusAction(memberId: string, isActive: boolean) {
+    const supabaseAdmin = getSupabaseAdmin();
+    try {
+        const { error } = await supabaseAdmin
+            .from('organization_members')
+            .update({ is_active: isActive })
+            .eq('id', memberId);
+
+        if (error) throw error;
+        revalidatePath('/dashboard/proktor/members');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Proctor: Toggle status error:', error);
+        return { success: false, error: error.message };
+    }
 }
 
 /**
@@ -148,7 +184,7 @@ export async function listOrganizationExams(orgId: string) {
 /**
  * Invite/Create new member for the organization
  */
-export async function inviteMemberAction(orgId: string, email: string, fullName: string, roleName: 'Guru' | 'Siswa' | 'Pengawas', password: string) {
+export async function inviteMemberAction(orgId: string, email: string, fullName: string, roleName: 'Guru' | 'Siswa' | 'Pengawas', password: string, identityNumber?: string) {
     const supabaseAdmin = getSupabaseAdmin();
     try {
         // 1. Create User in Auth
@@ -158,7 +194,8 @@ export async function inviteMemberAction(orgId: string, email: string, fullName:
             email_confirm: true,
             user_metadata: {
                 full_name: fullName,
-                role: roleName
+                role: roleName,
+                identity_number: identityNumber
             }
         });
 
@@ -166,7 +203,11 @@ export async function inviteMemberAction(orgId: string, email: string, fullName:
         const userId = authData.user.id;
 
         // 2. Create Profile
-        await supabaseAdmin.from('profiles').upsert({ id: userId, full_name: fullName });
+        await supabaseAdmin.from('profiles').upsert({
+            id: userId,
+            full_name: fullName,
+            identity_number: identityNumber
+        });
 
         // 3. Add to Organization
         const { data: member, error: mErr } = await supabaseAdmin
@@ -206,10 +247,24 @@ export async function createExamAction(data: {
     randomizeQuestions?: boolean;
     randomizeOptions?: boolean;
     showResults?: boolean;
+    isSafeMode?: boolean;
     questionBankId?: string;
 }) {
     const supabaseAdmin = getSupabaseAdmin();
     try {
+        // Validation: Ensure the question bank is published
+        if (data.questionBankId) {
+            const { data: bank } = await supabaseAdmin
+                .from('question_banks')
+                .select('is_published')
+                .eq('id', data.questionBankId)
+                .single();
+
+            if (!bank?.is_published) {
+                return { success: false, error: 'Bank soal harus diterbitkan (Published) sebelum bisa digunakan untuk ujian.' };
+            }
+        }
+
         const { data: exam, error } = await supabaseAdmin
             .from('exams')
             .insert({
@@ -223,6 +278,9 @@ export async function createExamAction(data: {
                 randomize_questions: data.randomizeQuestions ?? true,
                 randomize_options: data.randomizeOptions ?? true,
                 show_results: data.showResults ?? false,
+                metadata: {
+                    is_safe_mode: data.isSafeMode ?? true
+                },
                 status: 'draft'
             })
             .select()
@@ -366,6 +424,7 @@ export async function editExamAction(examId: string, data: {
     randomizeQuestions?: boolean;
     randomizeOptions?: boolean;
     showResults?: boolean;
+    isSafeMode?: boolean;
 }) {
     const supabaseAdmin = getSupabaseAdmin();
     try {
@@ -380,6 +439,9 @@ export async function editExamAction(examId: string, data: {
                 randomize_questions: data.randomizeQuestions ?? true,
                 randomize_options: data.randomizeOptions ?? true,
                 show_results: data.showResults ?? false,
+                metadata: {
+                    is_safe_mode: data.isSafeMode ?? true
+                }
             })
             .eq('id', examId);
         if (error) throw error;
@@ -395,7 +457,7 @@ export async function editExamAction(examId: string, data: {
 /**
  * Import many members in bulk
  */
-export async function importMembersAction(orgId: string, members: { fullName: string; email: string; role: 'Guru' | 'Siswa' | 'Pengawas'; password: string }[]) {
+export async function importMembersAction(orgId: string, members: { fullName: string; email: string; role: 'Guru' | 'Siswa' | 'Pengawas'; password: string; identityNumber?: string }[]) {
     const results = {
         successCount: 0,
         failedCount: 0,
@@ -404,7 +466,7 @@ export async function importMembersAction(orgId: string, members: { fullName: st
 
     for (const member of members) {
         try {
-            const result = await inviteMemberAction(orgId, member.email, member.fullName, member.role, member.password);
+            const result = await inviteMemberAction(orgId, member.email, member.fullName, member.role, member.password, member.identityNumber);
             if (result.success) {
                 results.successCount++;
             } else {
@@ -515,4 +577,63 @@ export async function getExamAnswersForAnalysisAction(examId: string) {
     }
 
     return answers || [];
+}
+
+/**
+ * Mendapatkan detail lengkap satu pengerjaan ujian (Attempt) untuk Analytics
+ */
+export async function getAttemptFullDetailsAction(attemptId: string) {
+    const supabaseAdmin = getSupabaseAdmin();
+    try {
+        // 1. Ambil data attempt, profil, dan info ujian
+        const { data: attempt, error: attemptError } = await supabaseAdmin
+            .from('exam_attempts')
+            .select(`
+                *,
+                profiles (full_name),
+                exams (*)
+            `)
+            .eq('id', attemptId)
+            .single();
+
+        if (attemptError || !attempt) throw attemptError;
+
+        // Fetch email manually from auth if needed, but profiles usually has it if synced
+        // If profile doesn't have email, we can try getting it from auth admin
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(attempt.user_id);
+        const email = userData?.user?.email || '-';
+
+        // 2. Ambil semua jawaban beserta detail soal dan pilihannya
+        const { data: answers, error: answersError } = await supabaseAdmin
+            .from('answers')
+            .select(`
+                *,
+                bank_questions (
+                    *,
+                    bank_question_options (*)
+                )
+            `)
+            .eq('attempt_id', attemptId);
+
+        if (answersError) throw answersError;
+
+        // 3. Ambil log keamanan
+        const { data: securityLogs, error: logsError } = await supabaseAdmin
+            .from('attempt_security_logs')
+            .select('*')
+            .eq('attempt_id', attemptId)
+            .order('created_at', { ascending: true });
+
+        return {
+            attempt: {
+                ...attempt,
+                email
+            },
+            answers: answers || [],
+            securityLogs: securityLogs || []
+        };
+    } catch (error: any) {
+        console.error('Proctor: Get full attempt details error:', error);
+        return null;
+    }
 }

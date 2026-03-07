@@ -82,7 +82,7 @@ export default function SchoolLandingPage() {
                         transition={{ delay: 0.2 }}
                         className="flex flex-wrap justify-center gap-6"
                     >
-                        <Link href="/login">
+                        <Link href={`/${slug}/login`}>
                             <button className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-12 py-5 rounded-2xl shadow-2xl shadow-indigo-500/20 transition-all flex items-center gap-3 active:scale-95 text-lg">
                                 Masuk ke Portal <ArrowRight size={20} />
                             </button>
@@ -110,7 +110,7 @@ export default function SchoolLandingPage() {
                             <role.icon className={`${role.color} mb-6`} size={40} />
                             <h3 className="text-2xl font-black mb-4 tracking-tight">Portal {role.title}</h3>
                             <p className="text-slate-500 font-medium leading-relaxed mb-8">{role.desc}</p>
-                            <Link href="/login" className="flex items-center gap-2 text-white font-bold text-sm">
+                            <Link href={`/${slug}/login`} className="flex items-center gap-2 text-white font-bold text-sm">
                                 Login Sekarang <ArrowRight size={16} className="text-indigo-400 group-hover:translate-x-1 transition-transform" />
                             </Link>
                         </motion.div>

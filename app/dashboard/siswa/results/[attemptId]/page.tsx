@@ -3,8 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { getAttemptDetailsAction } from '@/app/actions/siswa';
-import { Loader2, ArrowLeft, CheckCircle2, XCircle, Info, Hash } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle2, XCircle, Info, Hash, User } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { QuestionRenderer } from '@/app/components/questions/QuestionRenderer';
+import { LatexRenderer } from '@/app/components/questions/LatexRenderer';
 
 export default function StudentResultDetailsPage() {
     const params = useParams();
@@ -57,7 +59,7 @@ export default function StudentResultDetailsPage() {
                     <button onClick={() => router.push('/dashboard/siswa/results')} className="flex items-center gap-2 text-slate-400 hover:text-primary transition-colors font-bold uppercase tracking-widest text-xs mb-4">
                         <ArrowLeft size={16} /> Kembali
                     </button>
-                    <h1 className="text-3xl font-black text-primary uppercase italic tracking-tight mb-2">
+                    <h1 className="text-3xl font-black text-primary uppercase tracking-tight mb-2">
                         Detail Jawaban
                     </h1>
                     <div className="flex items-center gap-3 text-slate-500 font-medium">
@@ -107,8 +109,13 @@ export default function StudentResultDetailsPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {isEssay ? (
-                                        <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-lg">
-                                            Nilai Didapat: {ans.score || 0}
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className="flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/10">
+                                                {ans.score > 0 ? `Nilai: ${ans.score}` : 'Menunggu Koreksi'}
+                                            </div>
+                                            {!(ans.score > 0) && (
+                                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Skor akan tampil setelah dinilai guru</span>
+                                            )}
                                         </div>
                                     ) : isCorrect ? (
                                         <div className="flex items-center gap-2 text-emerald-600 font-bold text-xs uppercase tracking-widest bg-emerald-100 px-3 py-1.5 rounded-lg">
@@ -123,24 +130,45 @@ export default function StudentResultDetailsPage() {
                             </div>
 
                             <div className="p-8">
-                                <div className="prose prose-slate max-w-none mb-8" dangerouslySetInnerHTML={{ __html: qInfo?.question }} />
+                                <div className="mb-10">
+                                    <QuestionRenderer
+                                        question={{
+                                            ...qInfo,
+                                            question_text: qInfo?.question // Map "question" to "question_text" for renderer
+                                        }}
+                                        answer={ans.answer}
+                                        onAnswerChange={() => { }} // Read-only view
+                                        isPreview={false}
+                                        showFeedback={true}
+                                    />
+                                </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className={`p-5 rounded-2xl border ${isEssay ? 'bg-slate-50 border-slate-100' : isCorrect ? 'bg-emerald-50/50 border-emerald-100 text-emerald-900' : 'bg-rose-50/50 border-rose-100 text-rose-900'}`}>
-                                        <span className={`text-[10px] font-black uppercase tracking-widest mb-2 block ${isEssay ? 'text-slate-400' : isCorrect ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                            Jawaban Anda
-                                        </span>
-                                        <div className="font-medium whitespace-pre-wrap">
-                                            {studentAnswerText || <span className="italic opacity-50">Tidak dijawab</span>}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-50 pt-10">
+                                    <div className={`p-6 rounded-[2rem] border-2 shadow-sm transition-all ${isEssay ? 'bg-slate-50 border-slate-100' : isCorrect ? 'bg-emerald-50/30 border-emerald-100/50' : 'bg-rose-50/30 border-rose-100/50'}`}>
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                                <User size={14} strokeWidth={3} />
+                                            </div>
+                                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isEssay ? 'text-slate-400' : isCorrect ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                Respons Anda
+                                            </span>
+                                        </div>
+                                        <div className="font-bold text-slate-700 leading-relaxed whitespace-pre-wrap pl-1">
+                                            {studentAnswerText || <span className="italic opacity-30 font-medium">Peserta tidak memberikan jawaban</span>}
                                         </div>
                                     </div>
 
                                     {!isEssay && !isCorrect && correctAnswerText && (
-                                        <div className="p-5 rounded-2xl border bg-emerald-50/30 border-emerald-100 text-emerald-900">
-                                            <span className="text-[10px] font-black uppercase tracking-widest mb-2 block text-emerald-500">
-                                                Jawaban Benar
-                                            </span>
-                                            <div className="font-medium whitespace-pre-wrap">
+                                        <div className="p-6 rounded-[2rem] border-2 border-emerald-100/30 bg-emerald-50/20 shadow-sm">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                                    <CheckCircle2 size={14} strokeWidth={3} />
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">
+                                                    Kunci Jawaban
+                                                </span>
+                                            </div>
+                                            <div className="font-bold text-emerald-900 leading-relaxed whitespace-pre-wrap pl-1">
                                                 {correctAnswerText}
                                             </div>
                                         </div>

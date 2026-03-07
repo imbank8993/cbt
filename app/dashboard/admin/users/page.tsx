@@ -95,24 +95,36 @@ const UsersManagementPage = () => {
 
     return (
         <div className="space-y-10 pb-20">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h2 className="text-4xl font-black text-white tracking-tight uppercase italic flex items-center gap-4">
-                        <Users size={36} className="text-primary" />
-                        Manajemen User
-                    </h2>
-                    <p className="text-slate-400 font-medium">Kelola hak akses Admin, Proktor, Guru, dan Siswa secara terpusat.</p>
-                </div>
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0c1425] via-slate-900 to-[#020617] text-white border border-slate-800 shadow-2xl">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
 
-                <div className="relative w-full md:w-96">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Cari email atau nama..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-2xl py-3 pl-12 pr-4 text-white focus:ring-2 focus:ring-primary/50 outline-none"
-                    />
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+                    <div className="text-center md:text-left">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-white/10"
+                        >
+                            <Shield size={10} className="text-primary" /> System Administration
+                        </motion.div>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
+                            User <span className="text-primary">Control</span>
+                        </h2>
+                        <p className="text-slate-400 font-bold max-w-sm text-sm uppercase tracking-tight">
+                            Kelola hak akses Admin, Proktor, Guru, dan Siswa
+                        </p>
+                    </div>
+
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                        <input
+                            type="text"
+                            placeholder="CARI EMAIL ATAU NAMA..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary/50 outline-none font-black text-[10px] uppercase tracking-widest shadow-inner transition-all"
+                        />
+                    </div>
                 </div>
             </header>
 
@@ -126,7 +138,7 @@ const UsersManagementPage = () => {
                         <motion.div
                             layout
                             key={user.id}
-                            className="bg-slate-900/50 p-6 rounded-[2rem] border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 group hover:border-primary/30 transition-all shadow-xl"
+                            className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 group hover:border-primary/20 transition-all shadow-lg"
                         >
                             <div className="flex items-center gap-6">
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${user.isAdmin ? 'bg-primary/10 border-primary/30 text-primary-light' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
@@ -156,7 +168,7 @@ const UsersManagementPage = () => {
                                     </div>
                                 ))}
                                 {!user.isAdmin && user.memberships.length === 0 && (
-                                    <span className="text-xs text-slate-600 italic font-medium">Belum ada role organisasi</span>
+                                    <span className="text-xs text-slate-600 font-medium">Belum ada role organisasi</span>
                                 )}
                             </div>
 
@@ -164,9 +176,9 @@ const UsersManagementPage = () => {
                                 <button
                                     onClick={() => handleToggleAdmin(user)}
                                     disabled={processingId === user.id}
-                                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-xs transition-all border flex items-center justify-center gap-2 ${user.isAdmin ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20' : 'bg-primary/10 border-primary/20 text-primary-light hover:bg-primary/20'}`}
+                                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${user.isAdmin ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 shadow-lg shadow-rose-500/5' : 'bg-primary/10 border-primary/20 text-primary-light hover:bg-primary/20 shadow-lg shadow-primary/5'}`}
                                 >
-                                    {processingId === user.id ? <Loader2 size={14} className="animate-spin" /> : <Shield size={14} />}
+                                    {processingId === user.id ? <Loader2 size={12} className="animate-spin" /> : <Shield size={12} />}
                                     {user.isAdmin ? 'REVOKE ADMIN' : 'MAKE ADMIN'}
                                 </button>
                                 <button
@@ -174,9 +186,9 @@ const UsersManagementPage = () => {
                                         setSelectedUser(user);
                                         setIsRoleModalOpen(true);
                                     }}
-                                    className="p-2.5 bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl transition-all"
+                                    className="p-2.5 bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl transition-all shadow-md group-hover:border-primary/30"
                                 >
-                                    <UserPlus size={18} />
+                                    <UserPlus size={16} />
                                 </button>
                             </div>
                         </motion.div>
@@ -193,7 +205,7 @@ const UsersManagementPage = () => {
                             <button onClick={() => setIsRoleModalOpen(false)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-all"><X size={24} /></button>
 
                             <div className="mb-8">
-                                <h3 className="text-2xl font-black text-white tracking-tight uppercase italic">Assign Role</h3>
+                                <h3 className="text-2xl font-black text-white tracking-tight uppercase">Assign Role</h3>
                                 <p className="text-sm text-slate-400 font-medium">User: {selectedUser?.full_name}</p>
                             </div>
 

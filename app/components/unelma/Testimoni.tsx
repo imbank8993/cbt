@@ -70,7 +70,7 @@ const Testimoni = () => {
                                 </div>
                             </div>
 
-                            <p className="text-unelma-navy/70 italic leading-relaxed text-lg font-medium relative z-10">
+                            <p className="text-unelma-navy/70 leading-relaxed text-lg font-medium relative z-10">
                                 "{item.content}"
                             </p>
 

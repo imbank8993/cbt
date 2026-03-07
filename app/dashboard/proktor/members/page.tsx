@@ -6,7 +6,8 @@ import {
     Users, Search, UserPlus, Plus,
     MoreVertical, Trash2, Shield,
     School, GraduationCap, X,
-    Loader2, Check, Download, Activity, Upload, AlertCircle
+    Loader2, Check, Download, Activity, Upload, AlertCircle,
+    Power, UserMinus
 } from 'lucide-react';
 import {
     getProctorOrganization,
@@ -15,8 +16,10 @@ import {
     listOrganizationClasses,
     createClassAction,
     assignStudentToClassAction,
-    importMembersAction
+    importMembersAction,
+    toggleMemberStatusAction
 } from '@/app/actions/proktor';
+import { resetMemberPasswordAction } from '@/app/actions/user';
 import { supabase } from '@/lib/supabase';
 
 const MembersPage = () => {
@@ -26,21 +29,25 @@ const MembersPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('Semua');
     const [classes, setClasses] = useState<any[]>([]);
+    const [classTypeFilter, setClassTypeFilter] = useState<'all' | 'reguler' | 'tambahan'>('all');
 
     // Class Modal States
     const [isClassModalOpen, setIsClassModalOpen] = useState(false);
     const [classFormData, setClassFormData] = useState({ name: '', type: 'reguler' as 'reguler' | 'tambahan' });
     const [selectedMemberForClass, setSelectedMemberForClass] = useState<any>(null);
+    const [selectedMemberForReset, setSelectedMemberForReset] = useState<any>(null);
 
     // Modal & Form States
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isImportModalOpen, setIsImportModalOpen] = useState(false);
     const [isAddingClass, setIsAddingClass] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [resetPasswordValue, setResetPasswordValue] = useState('');
     const [formData, setFormData] = useState({
         email: '',
         fullName: '',
         role: 'Siswa' as any,
+        identityNumber: '',
         password: ''
     });
 
@@ -70,10 +77,10 @@ const MembersPage = () => {
         e.preventDefault();
         if (!org) return;
         setIsSubmitting(true);
-        const result = await inviteMemberAction(org.id, formData.email, formData.fullName, formData.role, formData.password);
+        const result = await inviteMemberAction(org.id, formData.email, formData.fullName, formData.role, formData.password, formData.identityNumber);
         if (result.success) {
             setIsInviteModalOpen(false);
-            setFormData({ email: '', fullName: '', role: 'Siswa', password: '' });
+            setFormData({ email: '', fullName: '', role: 'Siswa', password: '', identityNumber: '' });
             await loadData();
         } else {
             alert('Gagal menambah anggota: ' + result.error);
@@ -108,43 +115,78 @@ const MembersPage = () => {
         setIsSubmitting(false);
     };
 
+    const handleToggleStatus = async (memberId: string, currentStatus: boolean) => {
+        if (!confirm(`Apakah Anda yakin ingin ${currentStatus ? 'Menonaktifkan' : 'Mengaktifkan'} anggota ini?`)) return;
+        setIsSubmitting(true);
+        const result = await toggleMemberStatusAction(memberId, !currentStatus);
+        if (result.success) {
+            await loadData();
+        } else {
+            alert('Gagal mengubah status: ' + result.error);
+        }
+        setIsSubmitting(false);
+    };
+
+    const handleResetPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedMemberForReset || !resetPasswordValue) return;
+        setIsSubmitting(true);
+        const result = await resetMemberPasswordAction(selectedMemberForReset.userId, resetPasswordValue);
+        if (result.success) {
+            alert(`Password untuk ${selectedMemberForReset.fullName} berhasil direset.`);
+            setSelectedMemberForReset(null);
+            setResetPasswordValue('');
+        } else {
+            alert('Gagal meriset password: ' + result.error);
+        }
+        setIsSubmitting(false);
+    };
+
     const filteredMembers = members.filter(m => {
         const matchesSearch = m.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            m.identityNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             m.role?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesTab = activeTab === 'Semua' || m.role === activeTab;
         return matchesSearch && matchesTab;
+    });
+
+    const filteredClasses = classes.filter(cls => {
+        const matchesSearch = cls.name?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesType = classTypeFilter === 'all' || cls.type === classTypeFilter;
+        return matchesSearch && matchesType;
     });
 
     const tabs = ['Semua', 'Proktor', 'Guru', 'Siswa', 'Kelas'];
 
     return (
         <div className="space-y-10 pb-20">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <h2 className="text-4xl font-black text-primary tracking-tight uppercase italic flex items-center gap-4">
-                        <Users size={36} className="text-accent" />
-                        Management: {org?.name || 'School'}
-                    </h2>
-                    <p className="text-slate-400 font-medium italic uppercase tracking-tighter">Kelola Siswa, Guru, dan Pengawas di sekolah Anda.</p>
-                </div>
+            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-xl shadow-primary/10">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 blur-[60px] -ml-16 -mb-16 rounded-full"></div>
 
-                <div className="flex gap-4 w-full md:w-auto">
-                    <div className="relative flex-1 md:w-80">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Cari nama..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-12 pr-4 text-primary focus:ring-2 focus:ring-primary/50 outline-none font-bold italic uppercase tracking-tighter shadow-sm"
-                        />
+                <div className="relative">
+                    <div className="text-center md:text-left">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4"
+                        >
+                            <Users size={10} className="text-accent" /> Management Center
+                        </motion.div>
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
+                            Member <span className="text-accent">Workspace</span>
+                        </h2>
+                        <p className="text-white/60 font-bold max-w-sm text-sm uppercase tracking-tight">
+                            {org?.name || 'School Organization'}
+                        </p>
                     </div>
                 </div>
             </header>
 
-            {/* Tabs & Buttons */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div className="flex p-1.5 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-x-auto w-full md:w-auto">
+            {/* Tabs & Buttons - TWO ROW LAYOUT */}
+            <div className="flex flex-col gap-6">
+                {/* Row 1: Role Tabs */}
+                <div className="flex p-1.5 bg-white border border-slate-200 shadow-sm rounded-2xl overflow-x-auto w-full md:w-max backdrop-blur-md">
                     {tabs.map((tab) => (
                         <button
                             key={tab}
@@ -157,40 +199,65 @@ const MembersPage = () => {
                     ))}
                 </div>
 
-                <div className="flex gap-4 w-full md:w-auto">
-                    <button className="flex-1 md:flex-none bg-white hover:bg-slate-50 text-slate-700 font-black px-6 py-4 rounded-2xl border border-slate-200 shadow-sm transition-all flex items-center gap-3 active:scale-95 text-xs uppercase italic tracking-widest leading-none">
-                        <Download size={18} /> Export
-                    </button>
-                    {activeTab === 'Kelas' ? (
-                        <div className="flex flex-wrap gap-3">
-                            <button
-                                onClick={() => setIsImportModalOpen(true)}
-                                className="flex-1 md:flex-none group relative bg-primary hover:bg-primary-light text-white font-black px-6 py-4 rounded-2xl transition-all duration-300 shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 active:scale-95 overflow-hidden"
-                            >
-                                <div className="relative flex items-center justify-center gap-2">
-                                    <Upload size={18} className="group-hover:bounce" />
-                                    <span className="uppercase tracking-widest text-xs">Import Massal</span>
-                                </div>
-                            </button>
+                {/* Row 2: Search, Filter (if any) & Actions */}
+                <div className="flex flex-col xl:flex-row justify-between items-stretch xl:items-center gap-4">
+                    <div className="flex flex-col md:flex-row gap-4 flex-1">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <input
+                                type="text"
+                                placeholder={activeTab === 'Kelas' ? "CARI NAMA KELAS..." : "CARI NAMA ANGGOTA..."}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-primary placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-[10px] uppercase tracking-widest shadow-sm transition-all"
+                            />
+                        </div>
 
+                        {activeTab === 'Kelas' && (
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                                {[
+                                    { id: 'all', label: 'SEMUA' },
+                                    { id: 'reguler', label: 'REGULER' },
+                                    { id: 'tambahan', label: 'TAMBAHAN' }
+                                ].map((type) => (
+                                    <button
+                                        key={type.id}
+                                        onClick={() => setClassTypeFilter(type.id as any)}
+                                        className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${classTypeFilter === type.id ? 'bg-white text-primary shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        {type.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        <button className="flex-1 md:flex-none bg-white hover:bg-slate-50 text-slate-700 font-black px-6 py-3 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 text-[9px] uppercase tracking-widest">
+                            <Download size={14} /> Export
+                        </button>
+                        <button
+                            onClick={() => setIsImportModalOpen(true)}
+                            className="flex-1 md:flex-none bg-white hover:bg-slate-50 text-slate-700 font-black px-6 py-3 rounded-xl border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2 active:scale-95 text-[9px] uppercase tracking-widest"
+                        >
+                            <Upload size={14} /> Import
+                        </button>
+                        {activeTab === 'Kelas' ? (
                             <button
                                 onClick={() => setIsClassModalOpen(true)}
-                                className="flex-1 md:flex-none group relative bg-accent hover:bg-orange-600 text-white font-black px-6 py-4 rounded-2xl transition-all duration-300 shadow-xl shadow-accent/20 hover:shadow-2xl hover:shadow-accent/30 active:scale-95 overflow-hidden"
+                                className="flex-1 md:flex-none bg-accent hover:bg-orange-600 text-white font-black px-6 py-3 rounded-xl shadow-lg shadow-accent/10 transition-all flex items-center justify-center gap-2 active:scale-95 text-[9px] uppercase tracking-widest"
                             >
-                                <div className="relative flex items-center justify-center gap-2">
-                                    <Plus size={18} className="group-hover:rotate-12 transition-transform" />
-                                    <span className="uppercase tracking-widest text-xs">Buat Kelas Baru</span>
-                                </div>
+                                <Plus size={14} /> Buat Kelas
                             </button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => setIsInviteModalOpen(true)}
-                            className="flex-1 md:flex-none bg-primary hover:bg-primary-light text-white font-black px-6 py-4 rounded-2xl shadow-xl shadow-primary/20 transition-all flex items-center gap-3 active:scale-95 text-xs uppercase italic tracking-widest leading-none"
-                        >
-                            <UserPlus size={18} /> Tambah Anggota
-                        </button>
-                    )}
+                        ) : (
+                            <button
+                                onClick={() => setIsInviteModalOpen(true)}
+                                className="flex-1 md:flex-none bg-primary hover:bg-primary-light text-white font-black px-6 py-3 rounded-xl shadow-lg shadow-primary/10 transition-all flex items-center justify-center gap-2 active:scale-95 text-[9px] uppercase tracking-widest"
+                            >
+                                <UserPlus size={14} /> Tambah Anggota
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -200,7 +267,7 @@ const MembersPage = () => {
                 </div>
             ) : activeTab === 'Kelas' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {classes.map((cls) => (
+                    {filteredClasses.map((cls) => (
                         <motion.div
                             key={cls.id}
                             layout
@@ -228,13 +295,13 @@ const MembersPage = () => {
                                     <School size={18} className="text-slate-400 mt-2" />
                                 </div>
                             </div>
-                            <h3 className="text-xl font-black text-primary italic uppercase tracking-tight mb-2 group-hover:text-accent transition-colors">{cls.name}</h3>
+                            <h3 className="text-xl font-black text-primary uppercase tracking-tight mb-2 group-hover:text-accent transition-colors">{cls.name}</h3>
                             <div className="flex items-center gap-2 mb-2 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg w-max shadow-sm">
                                 <span className="text-[10px] uppercase font-bold text-slate-400">Kode:</span>
                                 <span className="text-sm font-black tracking-widest text-primary font-mono">{cls.join_code || '------'}</span>
                             </div>
                             <div className="flex justify-between items-end mt-4">
-                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                                     {cls.type === 'reguler' ? 'Kelas Utama Sekolah' : 'Kelas Belajar Tambahan'}
                                 </div>
                                 <div className="flex items-center gap-2 bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10">
@@ -247,7 +314,7 @@ const MembersPage = () => {
                     {classes.length === 0 && (
                         <div className="col-span-full py-20 text-center">
                             <School size={48} className="text-slate-300 mx-auto mb-4" />
-                            <p className="text-slate-500 font-bold italic uppercase tracking-tighter">Belum ada kelas tersedia</p>
+                            <p className="text-slate-500 font-bold uppercase tracking-tighter">Belum ada kelas tersedia</p>
                         </div>
                     )}
                 </div>
@@ -266,13 +333,20 @@ const MembersPage = () => {
                             <tbody>
                                 {filteredMembers.map((member) => (
                                     <tr key={member.id} className="group">
-                                        <td className="px-6 py-6 bg-slate-50/80 rounded-l-3xl border-y border-l border-slate-100 group-hover:bg-slate-100/80 transition-colors">
+                                        <td className="px-6 py-4 bg-slate-50/80 rounded-l-3xl border-y border-l border-slate-100 group-hover:bg-slate-100/80 transition-colors">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center font-black text-primary uppercase italic">
+                                                <div className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center font-black text-primary uppercase">
                                                     {(member.fullName || 'U')[0]}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-slate-900 uppercase italic tracking-tight">{member.fullName || 'Unnamed User'}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-bold text-slate-900 uppercase tracking-tight">{member.fullName || 'Unnamed User'}</span>
+                                                        {member.identityNumber && member.identityNumber !== '-' && (
+                                                            <span className="bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase">
+                                                                {member.role === 'Guru' ? 'NIP' : 'NISN'}: {member.identityNumber}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <span className="text-[10px] font-medium text-slate-500 lowercase">{member.email}</span>
                                                 </div>
                                             </div>
@@ -297,14 +371,14 @@ const MembersPage = () => {
                                                         </span>
                                                     ))}
                                                     {member.role === 'Siswa' && (!member.classes || member.classes.length === 0) && (
-                                                        <span className="text-[8px] font-bold text-slate-400 uppercase italic">Belum ada kelas</span>
+                                                        <span className="text-[8px] font-bold text-slate-400 uppercase">Belum ada kelas</span>
                                                     )}
                                                 </div>
 
                                                 {member.role === 'Siswa' && (
                                                     <button
                                                         onClick={() => setSelectedMemberForClass(member)}
-                                                        className="text-[8px] font-black text-primary hover:text-primary-light uppercase tracking-[0.2em] italic border-b border-primary/20 hover:border-primary-light transition-all mt-2"
+                                                        className="text-[8px] font-black text-primary hover:text-primary-light uppercase tracking-[0.2em] border-b border-primary/20 hover:border-primary-light transition-all mt-2"
                                                     >
                                                         Atur Kelas
                                                     </button>
@@ -312,11 +386,26 @@ const MembersPage = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-6 bg-slate-50/80 border-y border-slate-100 group-hover:bg-slate-100/80 text-center">
-                                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase border border-emerald-200">ACTIVE</span>
+                                            {member.is_active ? (
+                                                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-black uppercase border border-emerald-200">AKTIF</span>
+                                            ) : (
+                                                <span className="px-3 py-1 bg-slate-100 text-slate-400 rounded-full text-[10px] font-black uppercase border border-slate-200">NONAKTIF</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-6 bg-slate-50/80 rounded-r-3xl border-y border-r border-slate-100 group-hover:bg-slate-100/80 text-right">
-                                            <button className="p-2 hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600 mr-2 rounded-xl border border-transparent hover:border-slate-300 bg-white shadow-sm">
-                                                <MoreVertical size={18} />
+                                            <button
+                                                onClick={() => handleToggleStatus(member.id, member.is_active)}
+                                                className={`p-2 transition-colors mr-2 rounded-xl border border-transparent shadow-sm ${member.is_active ? 'hover:bg-orange-50 text-slate-400 hover:text-orange-500 hover:border-orange-100 bg-white' : 'hover:bg-emerald-50 text-emerald-400 hover:text-emerald-500 hover:border-emerald-100 bg-white'}`}
+                                                title={member.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                                            >
+                                                {member.is_active ? <UserMinus size={18} /> : <Check size={18} />}
+                                            </button>
+                                            <button
+                                                onClick={() => setSelectedMemberForReset(member)}
+                                                className="p-2 hover:bg-slate-200 transition-colors text-slate-400 hover:text-primary mr-2 rounded-xl border border-transparent hover:border-slate-300 bg-white shadow-sm"
+                                                title="Reset Password"
+                                            >
+                                                <Shield size={18} />
                                             </button>
                                             <button className="p-2 hover:bg-rose-50 rounded-xl transition-colors text-slate-400 hover:text-rose-500 border border-transparent hover:border-rose-200 bg-white shadow-sm">
                                                 <Trash2 size={18} />
@@ -330,7 +419,7 @@ const MembersPage = () => {
                         {filteredMembers.length === 0 && (
                             <div className="py-20 text-center">
                                 <Users size={48} className="text-slate-800 mx-auto mb-4" />
-                                <p className="text-slate-600 font-bold italic uppercase tracking-tighter">Tidak ada anggota ditemukan</p>
+                                <p className="text-slate-600 font-bold uppercase tracking-tighter">Tidak ada anggota ditemukan</p>
                             </div>
                         )}
                     </div>
@@ -346,7 +435,7 @@ const MembersPage = () => {
                             <button onClick={() => setIsInviteModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-600 transition-all"><X size={24} /></button>
 
                             <div className="mb-8">
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase italic mb-1">Tambah Anggota</h3>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase mb-1">Tambah Anggota</h3>
                                 <p className="text-sm text-slate-500 font-medium">Tambah Guru atau Siswa ke {org?.name}</p>
                             </div>
 
@@ -356,7 +445,7 @@ const MembersPage = () => {
                                     <select
                                         value={formData.role}
                                         onChange={e => setFormData({ ...formData, role: e.target.value as any })}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic uppercase tracking-tighter"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter"
                                     >
                                         <option value="Siswa">Siswa</option>
                                         <option value="Guru">Guru</option>
@@ -365,31 +454,44 @@ const MembersPage = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Lengkap</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nama Lengkap</label>
                                     <input
                                         required
                                         type="text"
                                         placeholder="Contoh: Ahmad Fauzan"
                                         value={formData.fullName}
                                         onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic uppercase tracking-tighter placeholder:text-slate-300"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter placeholder:text-slate-300"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Email Address</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">
+                                        {formData.role === 'Guru' ? 'NIP (Nomor Induk Pegawai)' : (formData.role === 'Siswa' ? 'NISN (Nomor Induk Siswa Nasional)' : 'Nomor Identitas')}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder={formData.role === 'Guru' ? "Contoh: 1980..." : (formData.role === 'Siswa' ? "Contoh: 00..." : "Masukkan nomor identitas")}
+                                        value={formData.identityNumber}
+                                        onChange={e => setFormData({ ...formData, identityNumber: e.target.value })}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary tracking-tighter placeholder:text-slate-300"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Email Address</label>
                                     <input
                                         required
                                         type="email"
                                         placeholder="email@sekolah.id"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic tracking-tighter placeholder:text-slate-300"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary tracking-tighter placeholder:text-slate-300"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Password</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Password</label>
                                     <input
                                         required
                                         type="password"
@@ -403,7 +505,7 @@ const MembersPage = () => {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full py-5 bg-primary hover:bg-primary-light text-white rounded-2xl font-black flex items-center justify-center gap-2 mt-4 transition-all shadow-xl shadow-primary/20 hover:shadow-2xl disabled:opacity-50 italic uppercase tracking-widest active:scale-95"
+                                    className="w-full py-5 bg-primary hover:bg-primary-light text-white rounded-2xl font-black flex items-center justify-center gap-2 mt-4 transition-all shadow-xl shadow-primary/20 hover:shadow-2xl disabled:opacity-50 uppercase tracking-widest active:scale-95"
                                 >
                                     {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
                                     TAMBAH SEKARANG
@@ -439,8 +541,8 @@ const MembersPage = () => {
                                             <span className="bg-white/20 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest">Bulk Import</span>
                                             <Upload size={16} className="text-white/80" />
                                         </div>
-                                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-tight">Import Massal Anggota</h2>
-                                        <p className="text-primary-50 font-medium mt-1">Gunakan template CSV untuk menambahkan banyak anggota sekaligus.</p>
+                                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter leading-tight">Import Massal Anggota</h2>
+                                        <p className="text-primary-50 font-medium mt-1">Gunakan template untuk menambahkan banyak anggota sekaligus.</p>
                                     </div>
                                     <button
                                         onClick={() => setIsImportModalOpen(false)}
@@ -476,7 +578,7 @@ const MembersPage = () => {
 
                                         {/* File Upload */}
                                         <div className="space-y-4">
-                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 italic">Pilih File Excel</label>
+                                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Pilih File Excel</label>
                                             <div className="relative">
                                                 <input
                                                     type="file"
@@ -502,6 +604,7 @@ const MembersPage = () => {
                                                                 return {
                                                                     fullName: String(row.fullName || row.FullName || row['Nama Lengkap'] || '').trim(),
                                                                     email: String(row.email || row.Email || '').trim(),
+                                                                    identityNumber: String(row.identityNumber || row.IdentityNumber || row['NIP'] || row['NISN'] || row['Nomor Identitas'] || '').trim(),
                                                                     role,
                                                                     password: String(row.password || row.Password || 'password').trim()
                                                                 };
@@ -558,7 +661,7 @@ const MembersPage = () => {
                                             <Loader2 size={64} className="text-primary animate-spin relative" />
                                         </div>
                                         <div className="text-center">
-                                            <h3 className="text-xl font-black text-primary uppercase italic tracking-tight mb-2">Sedang Mengimpor...</h3>
+                                            <h3 className="text-xl font-black text-primary uppercase tracking-tight mb-2">Sedang Mengimpor...</h3>
                                             <p className="text-slate-500 text-xs font-medium">Mohon tunggu, kami sedang mendaftarkan anggota ke dalam sistem.</p>
                                         </div>
                                     </div>
@@ -578,40 +681,40 @@ const MembersPage = () => {
                             <button onClick={() => setIsClassModalOpen(false)} className="absolute top-8 right-8 text-slate-400 hover:text-primary transition-all"><X size={24} /></button>
 
                             <div className="mb-8">
-                                <h3 className="text-2xl font-black text-primary tracking-tight uppercase italic mb-1">Buat Kelas Baru</h3>
+                                <h3 className="text-2xl font-black text-primary tracking-tight uppercase mb-1">Buat Kelas Baru</h3>
                                 <p className="text-sm text-slate-500 font-medium">Tambah kelompok siswa untuk {org?.name}</p>
                             </div>
 
                             <form onSubmit={handleCreateClass} className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Nama Kelas</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nama Kelas</label>
                                     <input
                                         required
                                         type="text"
                                         placeholder="Contoh: Kelas 10-A atau Club Fisika"
                                         value={classFormData.name}
                                         onChange={e => setClassFormData({ ...classFormData, name: e.target.value })}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic uppercase tracking-tighter shadow-inner placeholder:text-slate-300"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter shadow-inner placeholder:text-slate-300"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 italic">Tipe Kelas</label>
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Tipe Kelas</label>
                                     <select
                                         value={classFormData.type}
                                         onChange={e => setClassFormData({ ...classFormData, type: e.target.value as any })}
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary italic uppercase tracking-tighter shadow-inner"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary uppercase tracking-tighter shadow-inner"
                                     >
                                         <option value="reguler">Kelas Reguler (Sekolah)</option>
                                         <option value="tambahan">Kelas Tambahan (Belajar)</option>
                                     </select>
-                                    <p className="text-[10px] text-slate-500 italic mt-1 ml-2">Siswa hanya boleh memiliki SATU kelas Reguler.</p>
+                                    <p className="text-[10px] text-slate-500 mt-1 ml-2">Siswa hanya boleh memiliki SATU kelas Reguler.</p>
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full py-5 bg-accent text-white rounded-2xl font-black flex items-center justify-center gap-2 mt-4 hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 italic uppercase tracking-widest"
+                                    className="w-full py-5 bg-accent text-white rounded-2xl font-black flex items-center justify-center gap-2 mt-4 hover:bg-orange-600 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 uppercase tracking-widest"
                                 >
                                     {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Check size={20} />}
                                     BUAT KELAS
@@ -631,7 +734,7 @@ const MembersPage = () => {
                             <button onClick={() => setSelectedMemberForClass(null)} className="absolute top-8 right-8 text-slate-400 hover:text-primary transition-all"><X size={24} /></button>
 
                             <div className="mb-8">
-                                <h3 className="text-2xl font-black text-primary tracking-tight uppercase italic mb-1">Set Kelas Siswa</h3>
+                                <h3 className="text-2xl font-black text-primary tracking-tight uppercase mb-1">Set Kelas Siswa</h3>
                                 <p className="text-sm text-slate-500 font-medium">Pilih kelas untuk {selectedMemberForClass.fullName}</p>
                             </div>
 
@@ -645,7 +748,7 @@ const MembersPage = () => {
                                     >
                                         <div className="flex justify-between items-center">
                                             <div>
-                                                <div className="text-primary font-bold uppercase italic tracking-tight group-hover:text-primary-light transition-colors">{cls.name}</div>
+                                                <div className="text-primary font-bold uppercase tracking-tight group-hover:text-primary-light transition-colors">{cls.name}</div>
                                                 <div className="text-[9px] text-slate-500 uppercase font-black tracking-widest">{cls.type}</div>
                                             </div>
                                             <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-colors">
@@ -656,10 +759,51 @@ const MembersPage = () => {
                                 ))}
                                 {classes.length === 0 && (
                                     <div className="text-center py-10">
-                                        <p className="text-slate-500 text-xs italic">Belum ada kelas. Silakan buat kelas baru di tab Kelas.</p>
+                                        <p className="text-slate-500 text-xs">Belum ada kelas. Silakan buat kelas baru di tab Kelas.</p>
                                     </div>
                                 )}
                             </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Reset Password Modal */}
+            <AnimatePresence>
+                {selectedMemberForReset && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setSelectedMemberForReset(null)} />
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-sm rounded-[2.5rem] p-10 relative z-10 border border-slate-100 shadow-2xl">
+                            <button onClick={() => setSelectedMemberForReset(null)} className="absolute top-8 right-8 text-slate-400 hover:text-primary transition-all"><X size={24} /></button>
+
+                            <div className="mb-8">
+                                <h3 className="text-2xl font-black text-primary tracking-tight uppercase mb-1 text-center">Reset Password</h3>
+                                <p className="text-sm text-slate-500 font-medium text-center">Masukkan password baru untuk {selectedMemberForReset.fullName}</p>
+                            </div>
+
+                            <form onSubmit={handleResetPassword} className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Password Baru</label>
+                                    <input
+                                        required
+                                        type="text" // Using text to let proctor see what they typed
+                                        placeholder="••••••••"
+                                        value={resetPasswordValue}
+                                        onChange={e => setResetPasswordValue(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-primary tracking-tighter shadow-inner placeholder:text-slate-300"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting || !resetPasswordValue}
+                                    className="w-full py-5 bg-primary text-white rounded-2xl font-black flex items-center justify-center gap-2 mt-4 hover:bg-primary-light transition-all shadow-lg shadow-primary/20 disabled:opacity-50 uppercase tracking-widest"
+                                >
+                                    {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Shield size={20} />}
+                                    RESET PASSWORD
+                                </button>
+                                <p className="text-[8px] text-slate-400 text-center uppercase font-bold">Member akan otomatis logout dari semua perangkat.</p>
+                            </form>
                         </motion.div>
                     </div>
                 )}
