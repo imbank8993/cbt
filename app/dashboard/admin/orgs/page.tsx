@@ -12,12 +12,18 @@ import {
     ShieldCheck,
     X,
     PlusCircle,
-    Globe
+    Globe,
+    Clock,
+    CreditCard,
+    Calendar,
+    AlertCircle
 } from 'lucide-react';
 
 import { supabase } from '@/lib/supabase';
 import { registerOrganizationAction } from '@/app/actions/organization';
 import { setActiveOrgAction } from '@/app/actions/admin';
+import { updateSubscriptionAction } from '@/app/actions/subscription';
+import { fetchPricelist } from '@/lib/unelma';
 import { useRouter } from 'next/navigation';
 
 export default function OrgsManagement() {
@@ -29,6 +35,11 @@ export default function OrgsManagement() {
     const [selectedOrg, setSelectedOrg] = useState<any>(null);
     const [showProktorModal, setShowProktorModal] = useState(false);
     const [newProktorEmail, setNewProktorEmail] = useState('');
+    const [subscriptions, setSubscriptions] = useState<Record<string, any>>({});
+    const [showSubModal, setShowSubModal] = useState(false);
+    const [packages, setPackages] = useState<any[]>([]);
+    const [selectedPackageId, setSelectedPackageId] = useState('');
+    const [isSavingSub, setIsSavingSub] = useState(false);
 
     // Form states
     const [newOrg, setNewOrg] = useState({
@@ -43,16 +54,37 @@ export default function OrgsManagement() {
     // Fetch from Supabase
     useEffect(() => {
         fetchOrgs();
+        fetchPackages();
     }, []);
+
+    const fetchPackages = async () => {
+        const data = await fetchPricelist();
+        setPackages(data);
+    };
 
     const fetchOrgs = async () => {
         setLoading(true);
-        const { data, error } = await supabase
+        const { data: orgs, error } = await supabase
             .from('organizations')
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (data) setOrganizations(data);
+        if (orgs) {
+            setOrganizations(orgs);
+
+            // Fetch subscriptions
+            const { data: subs } = await supabase
+                .from('organization_subscriptions')
+                .select('*, package:package_id(*)');
+
+            if (subs) {
+                const subMap: Record<string, any> = {};
+                subs.forEach(s => {
+                    subMap[s.organization_id] = s;
+                });
+                setSubscriptions(subMap);
+            }
+        }
         setLoading(false);
     };
 
@@ -91,6 +123,27 @@ export default function OrgsManagement() {
         setShowProktorModal(false);
         setNewProktorEmail('');
         setSelectedOrg(null);
+    };
+
+    const handleUpdateSubscription = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedOrg || !selectedPackageId) return;
+
+        setIsSavingSub(true);
+        const pkg = packages.find(p => p.id === selectedPackageId);
+        const duration = pkg?.duration_days || 30;
+
+        const result = await updateSubscriptionAction(selectedOrg.id, selectedPackageId, duration);
+
+        if (result.success) {
+            fetchOrgs();
+            setShowSubModal(false);
+            setSelectedOrg(null);
+            setSelectedPackageId('');
+        } else {
+            alert('Gagal mengupdate langganan: ' + result.error);
+        }
+        setIsSavingSub(false);
     };
 
     const handleAddOrg = async (e: React.FormEvent) => {
@@ -226,12 +279,26 @@ export default function OrgsManagement() {
 
                                     <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                                         <div>
-                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Total Siswa</p>
-                                            <p className="text-lg font-bold text-white">0</p>
+                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Masa Berlaku</p>
+                                            <div className="flex flex-col">
+                                                <p className={`text-xs font-bold ${subscriptions[org.id] ? (new Date(subscriptions[org.id].end_date) < new Date() ? 'text-rose-400' : 'text-emerald-400') : 'text-white/20'}`}>
+                                                    {subscriptions[org.id]
+                                                        ? new Date(subscriptions[org.id].end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                        : 'Belum Aktif'}
+                                                </p>
+                                                <button
+                                                    onClick={() => { setSelectedOrg(org); setShowSubModal(true); }}
+                                                    className="text-[9px] text-primary-light font-bold text-left uppercase tracking-tighter hover:underline"
+                                                >
+                                                    {subscriptions[org.id] ? 'Perpanjang' : 'Aktifkan'}
+                                                </button>
+                                            </div>
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Lisensi</p>
-                                            <p className="text-lg font-bold text-white uppercase text-[10px]">Enterprise</p>
+                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Status Paket</p>
+                                            <p className="text-xs font-bold text-white uppercase truncate">
+                                                {subscriptions[org.id]?.package?.name || 'Reguler'}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
