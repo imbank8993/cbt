@@ -84,6 +84,20 @@ export async function registerOrganizationAction(formData: any) {
             }
         }
 
+        // 6. Create Default Subscription (30 days)
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + 30);
+
+        await supabaseAdmin
+            .from('organization_subscriptions')
+            .insert({
+                organization_id: orgId,
+                start_date: startDate.toISOString(),
+                end_date: endDate.toISOString(),
+                status: 'active'
+            });
+
         revalidatePath('/dashboard/admin/orgs');
         return { success: true };
 

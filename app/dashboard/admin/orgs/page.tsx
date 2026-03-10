@@ -16,13 +16,16 @@ import {
     Clock,
     CreditCard,
     Calendar,
-    AlertCircle
+    AlertCircle,
+    Zap,
+    ArrowRight
 } from 'lucide-react';
 
 import { supabase } from '@/lib/supabase';
 import { registerOrganizationAction } from '@/app/actions/organization';
 import { setActiveOrgAction } from '@/app/actions/admin';
 import { updateSubscriptionAction } from '@/app/actions/subscription';
+import { getTransactionsAction } from '@/app/actions/payment';
 import { fetchPricelist } from '@/lib/unelma';
 import { useRouter } from 'next/navigation';
 
@@ -39,7 +42,10 @@ export default function OrgsManagement() {
     const [showSubModal, setShowSubModal] = useState(false);
     const [packages, setPackages] = useState<any[]>([]);
     const [selectedPackageId, setSelectedPackageId] = useState('');
+    const [manualDays, setManualDays] = useState(30);
     const [isSavingSub, setIsSavingSub] = useState(false);
+    const [activeTab, setActiveTab] = useState<'orgs' | 'transactions'>('orgs');
+    const [transactions, setTransactions] = useState<any[]>([]);
 
     // Form states
     const [newOrg, setNewOrg] = useState({
@@ -66,7 +72,10 @@ export default function OrgsManagement() {
         setLoading(true);
         const { data: orgs, error } = await supabase
             .from('organizations')
-            .select('*')
+            .select(`
+                *,
+                organization_members(count)
+            `)
             .order('created_at', { ascending: false });
 
         if (orgs) {
@@ -127,24 +136,44 @@ export default function OrgsManagement() {
 
     const handleUpdateSubscription = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!selectedOrg || !selectedPackageId) return;
+        if (!selectedOrg) return;
 
         setIsSavingSub(true);
+        // If package is selected, use its duration, otherwise use manualDays
         const pkg = packages.find(p => p.id === selectedPackageId);
-        const duration = pkg?.duration_days || 30;
+        const duration = pkg ? pkg.duration_days : manualDays;
 
-        const result = await updateSubscriptionAction(selectedOrg.id, selectedPackageId, duration);
+        const result = await updateSubscriptionAction(
+            selectedOrg.id,
+            selectedPackageId || null,
+            duration,
+            'active'
+        );
 
         if (result.success) {
             fetchOrgs();
             setShowSubModal(false);
             setSelectedOrg(null);
             setSelectedPackageId('');
+            setManualDays(30);
         } else {
             alert('Gagal mengupdate langganan: ' + result.error);
         }
         setIsSavingSub(false);
     };
+
+    const fetchTransactions = async () => {
+        const result = await getTransactionsAction();
+        if (result.success) {
+            setTransactions(result.transactions || []);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'transactions') {
+            fetchTransactions();
+        }
+    }, [activeTab]);
 
     const handleAddOrg = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -177,164 +206,256 @@ export default function OrgsManagement() {
     );
 
     return (
-        <div className="space-y-12 pb-20">
-            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0c1425] via-slate-900 to-[#020617] text-white border border-slate-800 shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+        <div className="space-y-10 pb-20 font-['Outfit']">
+            <header className="relative p-12 overflow-hidden rounded-[3rem] bg-unelma-navy text-white shadow-2xl shadow-unelma-navy/10 border border-white/5">
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-unelma-orange/10 to-transparent"></div>
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-unelma-orange opacity-10 blur-[90px] rounded-full"></div>
 
                 <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="text-center md:text-left">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-white/10"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-xl rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-white/10 shadow-xl"
                         >
-                            <School size={10} className="text-primary" /> Ecosystem Management
+                            <School size={12} className="text-unelma-orange" /> Ecosystem Infrastructure
                         </motion.div>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
-                            Daftar <span className="text-primary">Sekolah</span>
+                        <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-2 uppercase leading-none">
+                            Daftar <span className="text-unelma-orange">Sekolah</span>
                         </h2>
-                        <p className="text-slate-400 font-bold max-w-sm text-sm uppercase tracking-tight">
-                            Manajemen instansi dan lisensi sekolah
+                        <p className="text-white/50 font-bold max-w-sm text-sm uppercase tracking-wide">
+                            Manajemen instansi, lisensi, dan otoritas proktor sekolah
                         </p>
                     </div>
 
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="group bg-primary hover:bg-primary text-white font-black px-8 py-4 rounded-xl shadow-xl shadow-primary/10 transition-all flex items-center gap-3 active:scale-95 text-[10px] uppercase tracking-widest"
+                        className="group bg-unelma-orange hover:bg-orange-500 text-unelma-navy font-black px-10 py-5 rounded-2xl shadow-xl shadow-unelma-orange/20 transition-all flex items-center gap-3 active:scale-95 text-[11px] uppercase tracking-widest"
                     >
-                        <PlusCircle size={18} className="group-hover:rotate-90 transition-transform" /> DAFTARKAN SEKOLAH
+                        <PlusCircle size={20} className="group-hover:rotate-90 transition-transform" /> DAFTARKAN SEKOLAH
                     </button>
                 </div>
             </header>
 
-            {/* Controls */}
-            <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative group">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30 group-hover:text-primary-light transition-colors" size={18} />
-                    <input
-                        type="text"
-                        placeholder="CARI SEKOLAH BERDASARKAN NAMA ATAU SUBDOMAIN..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-slate-900/60 border border-slate-800 rounded-xl py-4 pl-14 pr-4 text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-slate-600 font-bold uppercase tracking-tight"
-                    />
-                </div>
-                <div className="flex gap-2">
-                    <button className="px-6 py-4 bg-slate-900/60 border border-slate-800 rounded-xl text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all">Filter</button>
-                    <button className="px-6 py-4 bg-slate-900/60 border border-slate-800 rounded-xl text-white font-black text-[9px] uppercase tracking-widest hover:bg-slate-800 transition-all">Export</button>
-                </div>
-            </div>
-
-            {/* Orgs Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {loading ? (
-                    <div className="col-span-full flex justify-center py-20">
-                        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                ) : (
-                    <AnimatePresence>
-                        {filteredOrgs.map((org, i) => (
-                            <motion.div
-                                key={org.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                whileHover={{ y: -8 }}
-                                className="bg-slate-900/40 border border-slate-800/60 rounded-[2.5rem] overflow-hidden group hover:border-primary/40 transition-all backdrop-blur-xl flex flex-col"
-                            >
-                                <div className="p-6 flex-1">
-                                    <div className="flex justify-between items-start mb-8">
-                                        <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-slate-400 border border-white/5 shadow-inner">
-                                            <School size={32} />
-                                        </div>
-                                        <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${org.is_active ? 'bg-emerald-500/10 text-emerald-400 ring-emerald-500/20' : 'bg-rose-500/10 text-rose-400 ring-rose-500/20'
-                                            }`}>
-                                            {org.is_active ? 'Active' : 'Inactive'}
-                                        </div>
-                                    </div>
-
-                                    <h3 className="text-xl font-black text-white mb-1 tracking-tight line-clamp-1 uppercase">{org.name}</h3>
-                                    <div className="flex items-center gap-2 text-primary-light font-bold text-sm mb-6">
-                                        <Globe size={14} /> cbt-app.com/{org.slug}
-                                    </div>
-
-                                    <div className="mb-8 p-4 bg-slate-800/40 rounded-2xl border border-white/5">
-                                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-2">Proktor Utama</p>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                                                {org.proktor_email ? org.proktor_email[0].toUpperCase() : 'P'}
-                                            </div>
-                                            <div className="overflow-hidden text-ellipsis">
-                                                <p className="text-[11px] font-bold text-white truncate">{org.proktor_email || 'Belum Ditugaskan'}</p>
-                                                <button
-                                                    onClick={() => { setSelectedOrg(org); setNewProktorEmail(org.proktor_email || ''); setShowProktorModal(true); }}
-                                                    className="text-[10px] text-primary-light hover:text-primary-light font-bold"
-                                                >
-                                                    Kelola Proktor
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Masa Berlaku</p>
-                                            <div className="flex flex-col">
-                                                <p className={`text-xs font-bold ${subscriptions[org.id] ? (new Date(subscriptions[org.id].end_date) < new Date() ? 'text-rose-400' : 'text-emerald-400') : 'text-white/20'}`}>
-                                                    {subscriptions[org.id]
-                                                        ? new Date(subscriptions[org.id].end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-                                                        : 'Belum Aktif'}
-                                                </p>
-                                                <button
-                                                    onClick={() => { setSelectedOrg(org); setShowSubModal(true); }}
-                                                    className="text-[9px] text-primary-light font-bold text-left uppercase tracking-tighter hover:underline"
-                                                >
-                                                    {subscriptions[org.id] ? 'Perpanjang' : 'Aktifkan'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-1">Status Paket</p>
-                                            <p className="text-xs font-bold text-white uppercase truncate">
-                                                {subscriptions[org.id]?.package?.name || 'Reguler'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="px-6 py-4 bg-slate-800/20 border-t border-white/5 flex items-center justify-between">
-                                    <button
-                                        onClick={() => handleManageOrg(org.id)}
-                                        className="text-[9px] font-black text-primary hover:text-accent transition-colors flex items-center gap-2 uppercase tracking-widest px-4 py-2 bg-primary/5 rounded-xl border border-primary/10"
-                                    >
-                                        <ShieldCheck size={14} /> Kelola
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteOrg(org.id)}
-                                        className="text-[9px] font-black text-rose-500 hover:text-rose-400 transition-colors uppercase tracking-widest px-4 py-2 bg-rose-500/10 rounded-xl border border-rose-500/20"
-                                    >
-                                        Hapus
-                                    </button>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-                )}
-
-                {/* Create Card */}
-                <motion.div
-                    onClick={() => setShowAddModal(true)}
-                    whileHover={{ scale: 0.98 }}
-                    className="border-2 border-dashed border-slate-800 rounded-[2.5rem] flex flex-col items-center justify-center p-10 cursor-pointer hover:border-primary/30 hover:bg-primary/[0.02] transition-all group min-h-[400px]"
+            {/* Tabs */}
+            <div className="flex gap-4 p-2 bg-slate-100 rounded-[2rem] w-fit">
+                <button
+                    onClick={() => setActiveTab('orgs')}
+                    className={`px-8 py-4 rounded-3xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'orgs' ? 'bg-unelma-navy text-white shadow-xl shadow-unelma-navy/20' : 'text-slate-400 hover:text-unelma-navy'}`}
                 >
-                    <div className="w-20 h-20 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 text-slate-600 group-hover:text-primary-light group-hover:border-primary/30 transition-all">
-                        <Plus size={40} />
-                    </div>
-                    <p className="text-xl font-bold text-slate-500 group-hover:text-white transition-colors">Daftarkan Sekolah</p>
-                    <p className="text-slate-600 font-medium text-sm mt-2">Bantu satu sekolah lagi hari ini.</p>
-                </motion.div>
+                    Sekolah ({organizations.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('transactions')}
+                    className={`px-8 py-4 rounded-3xl font-black text-xs uppercase tracking-widest transition-all ${activeTab === 'transactions' ? 'bg-unelma-navy text-white shadow-xl shadow-unelma-navy/20' : 'text-slate-400 hover:text-unelma-navy'}`}
+                >
+                    Riwayat Transaksi
+                </button>
             </div>
+
+            {/* Controls */}
+            {activeTab === 'orgs' && (
+                <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1 relative group">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-unelma-orange transition-colors" size={20} />
+                        <input
+                            type="text"
+                            placeholder="CARI SEKOLAH BERDASARKAN NAMA ATAU SUBDOMAIN..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-[1.5rem] py-5 pl-16 pr-6 text-unelma-navy text-xs focus:outline-none focus:ring-4 focus:ring-unelma-navy/5 focus:border-unelma-navy/20 transition-all placeholder:text-slate-400 font-bold uppercase tracking-widest shadow-sm"
+                        />
+                    </div>
+                    <div className="flex gap-3">
+                        <button className="px-8 py-5 bg-white border border-slate-200 rounded-[1.5rem] text-unelma-navy font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-50 transition-all shadow-sm">Filter</button>
+                        <button className="px-8 py-5 bg-white border border-slate-200 rounded-[1.5rem] text-unelma-navy font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-50 transition-all shadow-sm">Export</button>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'orgs' ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                    {loading ? (
+                        <div className="col-span-full flex flex-col items-center justify-center py-32 gap-6">
+                            <div className="w-16 h-16 border-4 border-unelma-navy/5 border-t-unelma-orange rounded-full animate-spin"></div>
+                            <p className="text-[10px] font-black text-unelma-navy/20 uppercase tracking-[0.5em]">Synchronizing Data...</p>
+                        </div>
+                    ) : (
+                        <AnimatePresence>
+                            {filteredOrgs.map((org, i) => (
+                                <motion.div
+                                    key={org.id}
+                                    layout
+                                    className="bg-white border border-slate-200/60 rounded-[3rem] overflow-hidden group hover:border-unelma-navy/10 transition-all duration-300 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_30px_60px_-15px_rgba(3,12,77,0.15)] flex flex-col"
+                                >
+                                    {/* Copy existing Org Card contents */}
+                                    <div className="p-8 flex-1">
+                                        <div className="flex justify-between items-start mb-10">
+                                            <div className="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center text-unelma-navy border border-slate-100 shadow-inner group-hover:scale-110 transition-transform">
+                                                <School size={32} />
+                                            </div>
+                                            <button
+                                                onClick={async () => {
+                                                    const { error } = await supabase.from('organizations').update({ is_active: !org.is_active }).eq('id', org.id);
+                                                    if (!error) fetchOrgs();
+                                                }}
+                                                className={`px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm transition-all active:scale-95 ${org.is_active
+                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                    : 'bg-rose-50 text-rose-600 border border-rose-100'
+                                                    }`}>
+                                                {org.is_active ? 'Online (Active)' : 'Offline (Inactive)'}
+                                            </button>
+                                        </div>
+
+                                        <h3 className="text-2xl font-black text-unelma-navy mb-1 tracking-tight uppercase leading-none">{org.name}</h3>
+                                        <div className="flex items-center gap-2 text-slate-400 font-bold text-xs mb-8 uppercase tracking-widest">
+                                            <Globe size={14} className="text-unelma-orange" /> {org.slug}.cbt-app.com
+                                        </div>
+
+                                        <div className="mb-8 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 group-hover:bg-white transition-colors">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Proktor Utama</p>
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-unelma-navy rounded-xl flex items-center justify-center text-unelma-orange font-black text-sm shadow-lg shadow-unelma-navy/20">
+                                                    {org.proktor_email ? org.proktor_email[0].toUpperCase() : 'P'}
+                                                </div>
+                                                <div className="overflow-hidden flex-1">
+                                                    <p className="text-xs font-black text-unelma-navy truncate uppercase tracking-tight">{org.proktor_email || 'BELUM DITUGASKAN'}</p>
+                                                    <button
+                                                        onClick={() => { setSelectedOrg(org); setNewProktorEmail(org.proktor_email || ''); setShowProktorModal(true); }}
+                                                        className="text-[9px] text-unelma-orange hover:text-orange-600 font-black uppercase tracking-widest mt-1.5 transition-colors"
+                                                    >
+                                                        Kelola Otoritas
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-6 pt-6 border-t border-slate-100">
+                                            <div>
+                                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Masa Berlaku</p>
+                                                <div className="flex flex-col gap-1">
+                                                    <p className={`text-xs font-black uppercase tracking-tight ${subscriptions[org.id] ? (new Date(subscriptions[org.id].end_date) < new Date() ? 'text-rose-600' : 'text-emerald-600') : 'text-slate-300'}`}>
+                                                        {subscriptions[org.id]
+                                                            ? new Date(subscriptions[org.id].end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                            : 'TIDAK AKTIF'}
+                                                    </p>
+                                                    <button
+                                                        onClick={() => { setSelectedOrg(org); setShowSubModal(true); setManualDays(30); }}
+                                                        className="text-[9px] text-unelma-navy hover:text-unelma-orange font-black uppercase tracking-[0.1em] text-left transition-colors flex items-center gap-1"
+                                                    >
+                                                        {subscriptions[org.id] ? 'MANUAL EDIT' : 'ACTIVATE'} <ArrowRight size={8} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Kapasiatas</p>
+                                                <div className="flex items-center gap-2">
+                                                    <Users size={12} className="text-unelma-orange" />
+                                                    <p className="text-xs font-black text-unelma-navy uppercase tracking-tight">
+                                                        {(org.organization_members?.[0] as any)?.count || 0} Siswa
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5 leading-none">Paket Layanan</p>
+                                                <div className="flex items-center gap-2">
+                                                    <Zap size={12} className="text-unelma-orange" />
+                                                    <p className="text-xs font-black text-unelma-navy uppercase tracking-tight truncate">
+                                                        {subscriptions[org.id]?.package?.name || 'REGULER'}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between group-hover:bg-white transition-colors">
+                                        <button
+                                            onClick={() => handleManageOrg(org.id)}
+                                            className="text-[10px] font-black text-unelma-navy hover:bg-unelma-navy hover:text-white transition-all flex items-center gap-3 uppercase tracking-widest px-6 py-3 bg-white rounded-xl border border-slate-200 shadow-sm"
+                                        >
+                                            <ShieldCheck size={16} /> Kelola Sistem
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteOrg(org.id)}
+                                            className="text-[10px] font-black text-rose-500 hover:text-rose-600 transition-colors uppercase tracking-widest px-4 py-2"
+                                        >
+                                            Hapus
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    )}
+
+                    {/* Create Card */}
+                    <motion.div
+                        onClick={() => setShowAddModal(true)}
+                        className="border-2 border-dashed border-slate-200 rounded-[3rem] bg-white/50 flex flex-col items-center justify-center p-10 cursor-pointer hover:border-unelma-orange/30 hover:bg-white transition-all group min-h-[450px]"
+                    >
+                        <div className="w-24 h-24 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-8 text-slate-300 group-hover:text-unelma-orange transition-all">
+                            <Plus size={48} />
+                        </div>
+                        <p className="text-2xl font-black text-slate-400 group-hover:text-unelma-navy uppercase tracking-tighter">Daftarkan Sekolah</p>
+                    </motion.div>
+                </div>
+            ) : (
+                <div className="bg-white rounded-[3rem] border border-slate-200 shadow-xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Tanggal</th>
+                                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Order ID</th>
+                                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Pelanggan / Org</th>
+                                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Item</th>
+                                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Total</th>
+                                    <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-500">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {transactions.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-8 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-4 text-slate-300">
+                                                <CreditCard size={48} />
+                                                <p className="font-black uppercase tracking-widest text-xs">Belum ada transaksi</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    transactions.map((t) => (
+                                        <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-8 py-6 text-xs font-bold text-slate-600">
+                                                {new Date(t.created_at).toLocaleString('id-ID')}
+                                            </td>
+                                            <td className="px-8 py-6 text-xs font-black text-unelma-navy">{t.order_id}</td>
+                                            <td className="px-8 py-6">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-black text-unelma-navy uppercase">{t.guest_name}</span>
+                                                    <span className="text-[10px] text-slate-400 font-bold">{t.guest_email}</span>
+                                                    {t.organization_name && <span className="text-[10px] text-unelma-orange font-black uppercase mt-1">{t.organization_name}</span>}
+                                                </div>
+                                            </td>
+                                            <td className="px-8 py-6 text-xs font-bold uppercase text-slate-600">{t.item_name}</td>
+                                            <td className="px-8 py-6 text-xs font-black text-unelma-navy">
+                                                Rp {t.amount?.toLocaleString('id-ID')}
+                                            </td>
+                                            <td className="px-8 py-6">
+                                                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${t.status === 'settlement'
+                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                                    : 'bg-orange-50 text-orange-600 border-orange-100'
+                                                    }`}>
+                                                    {t.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
 
             {/* Add Modal */}
             <AnimatePresence>
@@ -580,20 +701,37 @@ export default function OrgsManagement() {
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2 mb-2 block">Pilih Paket</label>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2 mb-2 block">Pilih Paket (Opsi Otomatis)</label>
                                         <select
-                                            required
                                             value={selectedPackageId}
-                                            onChange={(e) => setSelectedPackageId(e.target.value)}
+                                            onChange={(e) => {
+                                                setSelectedPackageId(e.target.value);
+                                                const pkg = packages.find(p => p.id === e.target.value);
+                                                if (pkg) setManualDays(pkg.duration_days);
+                                            }}
                                             className="w-full bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 text-white outline-none shadow-inner text-sm font-bold cursor-pointer appearance-none"
                                         >
-                                            <option value="">-- PILIH PAKET --</option>
+                                            <option value="">-- PILIH PAKET UNTUK SET DURASI OTOMATIS --</option>
                                             {packages.map(pkg => (
                                                 <option key={pkg.id} value={pkg.id}>
                                                     {pkg.name} ({pkg.duration_days} Hari) - Rp {pkg.price.toLocaleString('id-ID')}
                                                 </option>
                                             ))}
                                         </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-2 mb-2 block">Durasi Manual (Bonus/Custom Hari)</label>
+                                        <div className="flex items-center gap-4 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 shadow-inner">
+                                            <input
+                                                type="number"
+                                                value={manualDays}
+                                                onChange={(e) => setManualDays(parseInt(e.target.value))}
+                                                className="bg-transparent flex-1 text-white outline-none font-black"
+                                                placeholder="30"
+                                            />
+                                            <span className="text-slate-500 font-black text-[10px] uppercase">Hari</span>
+                                        </div>
                                     </div>
 
                                     {subscriptions[selectedOrg?.id] && (

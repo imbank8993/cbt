@@ -2,7 +2,12 @@
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { revalidatePath } from 'next/cache';
 
-export async function updateSubscriptionAction(orgId: string, packageId: string, durationDays: number) {
+export async function updateSubscriptionAction(
+    orgId: string,
+    packageId: string | null,
+    durationDays: number,
+    status: 'active' | 'expired' | 'cancelled' = 'active'
+) {
     const supabaseAdmin = getSupabaseAdmin();
 
     try {
@@ -11,6 +16,7 @@ export async function updateSubscriptionAction(orgId: string, packageId: string,
         endDate.setDate(startDate.getDate() + durationDays);
 
         // Upsert subscription
+        // Using upsert with onConflict 'organization_id'
         const { error } = await supabaseAdmin
             .from('organization_subscriptions')
             .upsert({
@@ -18,13 +24,21 @@ export async function updateSubscriptionAction(orgId: string, packageId: string,
                 package_id: packageId,
                 start_date: startDate.toISOString(),
                 end_date: endDate.toISOString(),
-                status: 'active',
+                status: status,
                 updated_at: new Date().toISOString()
             }, {
                 onConflict: 'organization_id'
             });
 
         if (error) throw error;
+
+        // Also ensure organization itself is active if status is active
+        if (status === 'active') {
+            await supabaseAdmin
+                .from('organizations')
+                .update({ is_active: true })
+                .eq('id', orgId);
+        }
 
         revalidatePath('/dashboard/admin/orgs');
         return { success: true };

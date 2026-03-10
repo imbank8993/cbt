@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users, Shield, School, Plus, Search,
-    MoreVertical, Trash2, UserPlus, X, Loader2, Check
+    MoreVertical, Trash2, UserPlus, X, Loader2, Check, ArrowRight, ShieldCheck
 } from 'lucide-react';
 import { listAllUsersAction, getOrgsAndRolesAction, updateUserRoleAction } from '@/app/actions/user';
 
@@ -94,35 +94,36 @@ const UsersManagementPage = () => {
     );
 
     return (
-        <div className="space-y-10 pb-20">
-            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#0c1425] via-slate-900 to-[#020617] text-white border border-slate-800 shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-primary opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
+        <div className="space-y-10 pb-20 font-['Outfit']">
+            <header className="relative p-12 overflow-hidden rounded-[3rem] bg-unelma-navy text-white shadow-2xl shadow-unelma-navy/10 border border-white/5">
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-unelma-orange/10 to-transparent"></div>
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-unelma-orange opacity-10 blur-[90px] rounded-full"></div>
 
                 <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
                     <div className="text-center md:text-left">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4 border border-white/10"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 backdrop-blur-xl rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-white/10 shadow-xl"
                         >
-                            <Shield size={10} className="text-primary" /> System Administration
+                            <ShieldCheck size={12} className="text-unelma-orange" /> Access Control Matrix
                         </motion.div>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase flex items-center justify-center md:justify-start gap-4">
-                            User <span className="text-primary">Control</span>
+                        <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-2 uppercase leading-none">
+                            User <span className="text-unelma-orange">Control</span>
                         </h2>
-                        <p className="text-slate-400 font-bold max-w-sm text-sm uppercase tracking-tight">
-                            Kelola hak akses Admin, Proktor, Guru, dan Siswa
+                        <p className="text-white/50 font-bold max-w-sm text-sm uppercase tracking-wide">
+                            Manajemen hak akses Admin, Proktor, Guru, dan Siswa
                         </p>
                     </div>
 
-                    <div className="relative w-full md:w-80">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                    <div className="relative w-full md:w-96 group">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-unelma-orange transition-colors" size={20} />
                         <input
                             type="text"
-                            placeholder="CARI EMAIL ATAU NAMA..."
+                            placeholder="CARI EMAIL ATAU NAMA PENGGUNA..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white/5 backdrop-blur-md border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary/50 outline-none font-black text-[10px] uppercase tracking-widest shadow-inner transition-all"
+                            className="w-full bg-white border border-slate-200 rounded-[1.5rem] py-5 pl-16 pr-6 text-unelma-navy text-xs focus:outline-none focus:ring-4 focus:ring-unelma-navy/5 focus:border-unelma-navy/20 transition-all placeholder:text-slate-400 font-bold uppercase tracking-widest shadow-sm"
                         />
                     </div>
                 </div>
@@ -133,62 +134,72 @@ const UsersManagementPage = () => {
                     <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-6">
                     {filteredUsers.map((user) => (
                         <motion.div
                             layout
                             key={user.id}
-                            className="bg-slate-900/40 p-5 rounded-[2rem] border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 group hover:border-primary/20 transition-all shadow-lg"
+                            className="bg-white p-7 rounded-[2.5rem] border border-slate-200/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 group hover:border-unelma-navy/10 transition-all shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-10px_rgba(3,12,77,0.1)]"
                         >
                             <div className="flex items-center gap-6">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${user.isAdmin ? 'bg-primary/10 border-primary/30 text-primary-light' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
-                                    <Users size={24} />
+                                <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center border-2 transition-all group-hover:scale-105 ${user.isAdmin ? 'bg-unelma-navy text-unelma-orange border-unelma-navy shadow-lg shadow-unelma-navy/20' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                                    <Users size={28} />
                                 </div>
-                                <div>
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <h4 className="text-lg font-bold text-white tracking-tight">{user.full_name}</h4>
-                                        {user.isAdmin && <span className="text-[10px] font-black bg-primary text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">PLATFORM ADMIN</span>}
+                                <div className="flex-1">
+                                    <div className="flex items-center flex-wrap gap-2 mb-2">
+                                        <h4 className="text-xl font-black text-unelma-navy tracking-tight uppercase leading-none">{user.full_name}</h4>
+                                        {user.isAdmin && (
+                                            <span className="text-[9px] font-black bg-unelma-orange text-unelma-navy px-3 py-1 rounded-full uppercase tracking-widest border border-unelma-orange/20">
+                                                Platform Admin
+                                            </span>
+                                        )}
                                     </div>
-                                    <p className="text-slate-500 text-sm font-medium">{user.email}</p>
+                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{user.email}</p>
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-2 flex-1 md:justify-center">
+                            <div className="flex flex-wrap gap-3 flex-1 md:justify-center">
                                 {user.memberships.map((m: any, idx: number) => (
-                                    <div key={idx} className="flex items-center gap-2 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-xl">
-                                        <School size={14} className="text-emerald-400" />
-                                        <span className="text-xs font-bold text-slate-300">{m.orgName}</span>
-                                        <span className="text-[10px] bg-slate-700 text-slate-400 px-1.5 py-0.5 rounded-md uppercase font-black">{m.role}</span>
+                                    <div key={idx} className="flex items-center gap-3 bg-slate-50 border border-slate-100 px-4 py-2 rounded-2xl group/tag hover:bg-white hover:border-unelma-orange/20 transition-all">
+                                        <School size={14} className="text-unelma-navy" />
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black text-unelma-navy uppercase leading-none mb-1">{m.orgName}</span>
+                                            <span className="text-[8px] font-black text-unelma-orange uppercase tracking-[0.2em]">{m.role}</span>
+                                        </div>
                                         <button
                                             onClick={() => handleRemoveMembership(user, m.orgName)}
-                                            className="text-slate-600 hover:text-rose-400 p-0.5"
+                                            className="text-slate-300 hover:text-rose-500 p-1 opacity-0 group-hover/tag:opacity-100 transition-all"
                                         >
-                                            <X size={12} />
+                                            <X size={14} />
                                         </button>
                                     </div>
                                 ))}
                                 {!user.isAdmin && user.memberships.length === 0 && (
-                                    <span className="text-xs text-slate-600 font-medium">Belum ada role organisasi</span>
+                                    <span className="text-[10px] text-slate-300 font-black uppercase tracking-widest italic border-2 border-dashed border-slate-100 px-6 py-2 rounded-2xl">
+                                        Empty Organization Role
+                                    </span>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 w-full md:w-auto">
+                            <div className="flex items-center gap-3 w-full md:w-auto">
                                 <button
                                     onClick={() => handleToggleAdmin(user)}
                                     disabled={processingId === user.id}
-                                    className={`flex-1 md:flex-none px-4 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all border flex items-center justify-center gap-2 ${user.isAdmin ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 shadow-lg shadow-rose-500/5' : 'bg-primary/10 border-primary/20 text-primary-light hover:bg-primary/20 shadow-lg shadow-primary/5'}`}
+                                    className={`flex-1 md:flex-none px-6 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border flex items-center justify-center gap-2 shadow-sm ${user.isAdmin
+                                        ? 'bg-rose-50 border-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white'
+                                        : 'bg-unelma-navy border-unelma-navy text-white hover:bg-unelma-navy-light shadow-xl shadow-unelma-navy/10'}`}
                                 >
                                     {processingId === user.id ? <Loader2 size={12} className="animate-spin" /> : <Shield size={12} />}
-                                    {user.isAdmin ? 'REVOKE ADMIN' : 'MAKE ADMIN'}
+                                    {user.isAdmin ? 'Revoke Admin' : 'Assign Admin'}
                                 </button>
                                 <button
                                     onClick={() => {
                                         setSelectedUser(user);
                                         setIsRoleModalOpen(true);
                                     }}
-                                    className="p-2.5 bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 rounded-xl transition-all shadow-md group-hover:border-primary/30"
+                                    className="p-4 bg-slate-50 border border-slate-200 text-unelma-navy hover:bg-unelma-orange hover:border-unelma-orange transition-all rounded-xl shadow-sm group-hover:scale-105"
                                 >
-                                    <UserPlus size={16} />
+                                    <UserPlus size={18} />
                                 </button>
                             </div>
                         </motion.div>

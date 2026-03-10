@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react';
@@ -74,8 +74,10 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
         <div className="relative w-full">
             {/* QUESTION TEXT */}
             {showQuestion && (
-                <div className="prose prose-slate max-w-none mb-8 text-lg font-black leading-relaxed text-slate-950 relative z-10 tracking-tight">
-                    <LatexRenderer text={question.question_text} />
+                <div className="ql-snow relative z-10 w-full max-w-[21cm] mb-8">
+                    <div className="ql-editor rich-content !p-0 !min-h-0 text-[13px] text-slate-900">
+                        <LatexRenderer text={question.question_text} />
+                    </div>
                 </div>
             )}
 
@@ -101,19 +103,19 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                                     disabled={showFeedback}
                                     onChange={() => onAnswerChange(opt.id)}
                                 />
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-medium mr-4 transition-all duration-300 border-2 text-[13px] 
+                                <div className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center font-black mr-6 transition-all duration-300 border-2 text-[15px] 
                                 ${showFeedback
                                         ? (isCorrect ? 'bg-emerald-500 text-white border-emerald-500' : isSelected ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-50 text-slate-300 border-slate-100')
                                         : (isSelected ? 'bg-[#f8a01b] text-white border-[#f8a01b] scale-105' : 'bg-slate-50 text-slate-400 border-slate-100 group-hover:border-[#f8a01b]/20 group-hover:text-slate-600')}`}>
                                     {label}
                                 </div>
-                                <div className={`flex-1 text-[15px] font-black transition-colors duration-300 
+                                <div className={`flex-1 text-[11pt] rich-content font-normal transition-colors duration-300 
                                 ${showFeedback
                                         ? (isCorrect ? 'text-emerald-900' : isSelected ? 'text-rose-900' : 'text-slate-400')
                                         : (isSelected ? 'text-[#f8a01b]' : 'text-slate-950 group-hover:text-[#f8a01b]')}`}>
-                                    <LatexRenderer text={opt.option_text || opt.text} />
+                                    <div className="ql-snow"><div className="ql-editor !p-0 !min-h-0 !text-[11pt]"><LatexRenderer text={opt.option_text || opt.text} /></div></div>
                                 </div>
-                                <div className="w-8 h-8 rounded-full ml-4 flex items-center justify-center transition-all duration-300">
+                                <div className="w-8 h-8 shrink-0 rounded-full ml-4 flex items-center justify-center transition-all duration-300">
                                     {showFeedback ? (
                                         isCorrect ? (
                                             <div className="w-full h-full bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-md">
@@ -144,8 +146,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
 
                                 return (
                                     <div key={opt.id} className="flex flex-col md:flex-row md:items-center gap-6 py-3 px-6 bg-white border border-slate-100 rounded-[1.5rem] shadow-sm hover:shadow-md transition-all">
-                                        <div className="flex-1 text-[15px] font-black text-slate-950 leading-relaxed">
-                                            <LatexRenderer text={opt.option_text || opt.text} />
+                                        <div className="rich-content flex-1 text-[11pt] font-normal text-slate-950 leading-relaxed ql-snow">
+                                            <div className="ql-editor !p-0 !min-h-0 !text-[11pt]"><LatexRenderer text={opt.option_text || opt.text} /></div>
                                         </div>
                                         <div className="flex items-center gap-3 shrink-0">
                                             {/* BENAR BUTTON */}
@@ -211,19 +213,19 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                                         onAnswerChange(JSON.stringify(next));
                                     }}
                                 />
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black mr-6 transition-all duration-300 border-2 text-base 
+                                <div className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center font-black mr-6 transition-all duration-300 border-2 text-base 
                                 ${showFeedback
                                         ? (isCorrect ? 'bg-emerald-500 text-white border-emerald-500' : isSelected ? 'bg-rose-500 text-white border-rose-500' : 'bg-slate-50 text-slate-300 border-slate-100')
                                         : (isSelected ? 'bg-[#f8a01b] text-white border-[#f8a01b] scale-105' : 'bg-slate-50 text-slate-400 border-slate-100 group-hover:border-[#f8a01b]/20 group-hover:text-slate-600')}`}>
                                     {letters[idx] || '?'}
                                 </div>
-                                <div className={`flex-1 text-[15px] font-black transition-colors duration-300 
+                                <div className={`flex-1 text-[11pt] rich-content font-normal transition-colors duration-300 
                                 ${showFeedback
                                         ? (isCorrect ? 'text-emerald-900' : isSelected ? 'text-rose-900' : 'text-slate-400')
                                         : (isSelected ? 'text-[#f8a01b]' : 'text-slate-950 group-hover:text-[#f8a01b]')}`}>
-                                    <LatexRenderer text={opt.option_text || opt.text} />
+                                    <div className="ql-snow"><div className="ql-editor !p-0 !min-h-0 !text-[11pt]"><LatexRenderer text={opt.option_text || opt.text} /></div></div>
                                 </div>
-                                <div className={`w-8 h-8 rounded-md border-2 ml-4 flex items-center justify-center transition-all duration-300 
+                                <div className={`w-8 h-8 shrink-0 rounded-md border-2 ml-4 flex items-center justify-center transition-all duration-300 
                                 ${showFeedback
                                         ? (isCorrect ? 'bg-emerald-500 border-emerald-500 text-white' : isSelected ? 'bg-rose-500 border-rose-500 text-white' : 'bg-white border-slate-200')
                                         : (isSelected ? 'bg-[#f8a01b] border-[#f8a01b]' : 'bg-white border-slate-200')}`}>
@@ -274,8 +276,8 @@ export const QuestionRenderer: React.FC<QuestionRendererProps> = ({
                                                         <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[#030c4d] font-normal text-[10px] border border-slate-200 group-hover:bg-white transition-colors">
                                                             {optIdx + 1}
                                                         </div>
-                                                        <div className="text-[14px] font-medium text-[#030c4d] leading-relaxed">
-                                                            <LatexRenderer text={opt.option_text || opt.text} />
+                                                        <div className="text-[11pt] font-medium text-[#030c4d] leading-relaxed ql-snow">
+                                                            <div className="ql-editor !p-0 !min-h-0 !text-[11pt]"><LatexRenderer text={opt.option_text || opt.text} /></div>
                                                         </div>
                                                     </div>
                                                 </td>

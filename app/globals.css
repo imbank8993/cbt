@@ -51,14 +51,31 @@ body {
 }
 
 @keyframes float {
-  0% { transform: translateY(0px) translateX(0px); }
-  50% { transform: translateY(-15px) translateX(8px); }
-  100% { transform: translateY(0px) translateX(0px); }
+  0% {
+    transform: translateY(0px) translateX(0px);
+  }
+
+  50% {
+    transform: translateY(-15px) translateX(8px);
+  }
+
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
 }
 
 @keyframes pulse-warm {
-  0%, 100% { opacity: 0.2; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(1.1); }
+
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(1.1);
+  }
 }
 
 /* Custom Utilities */
@@ -138,22 +155,145 @@ body {
 }
 
 /* Rich Content Styles (Word-style) */
+.rich-content,
+.force-wrap,
+.rich-content *,
+.force-wrap * {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: normal !important;
+  line-break: normal;
+  hyphens: none !important;
+}
+
+.question-readable-width {
+  max-width: 21cm;
+}
+
 .rich-content p {
   margin-bottom: 0.5rem;
   line-height: 1.6;
+}
+
+.rich-content p,
+.rich-content h1,
+.rich-content h2,
+.rich-content h3,
+.rich-content h4,
+.rich-content blockquote,
+.rich-content .ql-align-center,
+.rich-content .ql-align-right,
+.rich-content .ql-align-justify {
+  width: 100%;
+  display: block;
 }
 
 .rich-content p:last-child {
   margin-bottom: 0;
 }
 
-.rich-content strong {
-  font-weight: 700;
-  color: var(--primary);
+.rich-content strong,
+.rich-content b {
+  font-weight: 700 !important;
 }
 
-.rich-content em {
-  font-style: italic;
+.rich-content em,
+.rich-content i {
+  font-style: italic !important;
+}
+
+.rich-content u {
+  text-decoration: underline !important;
+}
+
+.rich-content .ql-align-center,
+.rich-content [style*="text-align: center"],
+.rich-content [style*="text-align:center"] {
+  text-align: center !important;
+}
+
+.rich-content .ql-align-right,
+.rich-content [style*="text-align: right"],
+.rich-content [style*="text-align:right"] {
+  text-align: right !important;
+}
+
+.rich-content .ql-align-justify,
+.rich-content [style*="text-align: justify"],
+.rich-content [style*="text-align:justify"] {
+  text-align: justify !important;
+  text-justify: inter-word !important;
+}
+
+.rich-content .ql-align-justify * {
+  text-align: inherit !important;
+}
+
+/* Indentation support */
+.rich-content .ql-indent-1 {
+  padding-left: 3em;
+}
+
+.rich-content .ql-indent-2 {
+  padding-left: 6em;
+}
+
+.rich-content .ql-indent-3 {
+  padding-left: 9em;
+}
+
+.rich-content .ql-indent-4 {
+  padding-left: 12em;
+}
+
+.rich-content .ql-indent-5 {
+  padding-left: 15em;
+}
+
+.rich-content .ql-indent-6 {
+  padding-left: 18em;
+}
+
+.rich-content .ql-indent-7 {
+  padding-left: 21em;
+}
+
+.rich-content .ql-indent-8 {
+  padding-left: 24em;
+}
+
+/* List Styling */
+.rich-content ul,
+.rich-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+  display: block;
+  width: 100%;
+}
+
+.rich-content ul {
+  list-style-type: disc !important;
+}
+
+.rich-content ol {
+  list-style-type: decimal !important;
+}
+
+.rich-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* Handle nested items in centered blocks (like images) */
+.rich-content .ql-align-center img {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+.rich-content img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
 }
 
 /* Professional Table Styles */

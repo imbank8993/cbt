@@ -1,5 +1,5 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Users,
@@ -9,126 +9,223 @@ import {
     Activity,
     PlusCircle,
     Database,
-    ArrowRight
+    ArrowRight,
+    TrendingUp,
+    LayoutDashboard,
+    Zap,
+    Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import { getAdminStatsAction } from '@/app/actions/admin';
 
-const QuickAction = ({ label, desc, icon: Icon, href, color, shadow }: any) => (
-    <Link href={href}>
+const QuickAction = ({ label, desc, icon: Icon, href, color, tag }: any) => (
+    <Link href={href} className="block group">
         <motion.div
-            whileHover={{ y: -5, scale: 1.02 }}
-            className="bg-white border border-slate-100 p-8 rounded-[2.5rem] hover:border-primary/20 transition-all group flex flex-col h-full shadow-sm hover:shadow-premium relative overflow-hidden"
+            whileHover={{ y: -6, scale: 1.01 }}
+            className="h-full bg-white rounded-[2rem] p-8 border border-slate-200/60 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-12px_rgba(3,12,77,0.12)] hover:border-unelma-navy/10 transition-all duration-300 relative overflow-hidden"
         >
-            <div className={`absolute top-0 left-0 w-2 h-full ${color.replace('text', 'bg')}`}></div>
-            <div className={`w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center ${color} shadow-sm mb-6 group-hover:rotate-6 transition-transform`}>
-                <Icon size={32} />
+            <div className="flex justify-between items-start mb-6">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${color} group-hover:scale-110 group-hover:rotate-3`}>
+                    <Icon size={28} />
+                </div>
+                {tag && (
+                    <span className="px-3 py-1 bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 rounded-full border border-slate-100 group-hover:bg-unelma-orange group-hover:text-unelma-navy group-hover:border-unelma-orange transition-colors">
+                        {tag}
+                    </span>
+                )}
             </div>
-            <h3 className="text-xl font-black text-primary uppercase tracking-tight mb-2 group-hover:text-accent transition-colors">{label}</h3>
-            <p className="text-slate-500 text-sm font-medium mb-8 flex-1">{desc}</p>
-            <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-widest group-hover:text-accent transition-colors">
-                Buka Sekarang <ArrowRight size={16} />
+
+            <h3 className="text-lg font-black text-unelma-navy uppercase mb-3 tracking-tight group-hover:text-unelma-navy transition-colors">
+                {label}
+            </h3>
+            <p className="text-slate-500 text-xs font-medium leading-relaxed mb-8">
+                {desc}
+            </p>
+
+            <div className="flex items-center gap-2 text-unelma-navy font-black text-[9px] uppercase tracking-[0.2em] group-hover:gap-3 transition-all mt-auto">
+                Kelola Modul <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
         </motion.div>
     </Link>
 );
 
+const StatCard = ({ label, value, icon: Icon, trend, color, isLoading }: any) => (
+    <motion.div
+        whileHover={{ y: -4 }}
+        className="bg-white rounded-[2rem] p-7 border border-slate-200/60 shadow-sm relative overflow-hidden group min-h-[160px] flex flex-col justify-center"
+    >
+        <div className="flex items-center justify-between mb-4">
+            <div className={`p-3 rounded-xl bg-slate-50 group-hover:bg-white transition-colors border border-transparent group-hover:border-slate-100 ${color}`}>
+                <Icon size={20} strokeWidth={2.5} />
+            </div>
+            {trend && !isLoading && (
+                <div className="flex items-center gap-1 text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                    <TrendingUp size={10} /> {trend}
+                </div>
+            )}
+        </div>
+        <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+            {isLoading ? (
+                <div className="h-9 flex items-center">
+                    <Loader2 size={24} className="text-slate-200 animate-spin" />
+                </div>
+            ) : (
+                <h4 className="text-3xl font-black text-unelma-navy tracking-tighter">{value}</h4>
+            )}
+        </div>
+        <div className="absolute bottom-0 right-0 w-24 h-24 opacity-[0.02] translate-x-4 translate-y-4 group-hover:scale-110 transition-transform">
+            <Icon size={96} />
+        </div>
+    </motion.div>
+);
+
 export default function AdminDashboard() {
+    const [stats, setStats] = useState({
+        activeOrgs: 0,
+        totalStudents: 0
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            const res = await getAdminStatsAction();
+            if (res.success && res.data) {
+                setStats(res.data);
+            }
+            setLoading(false);
+        };
+        fetchStats();
+    }, []);
+
+    // Helper to format large numbers
+    const formatNumber = (num: number) => {
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+        return num.toString();
+    };
+
     return (
-        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
-            {/* Header Section */}
-            <header className="relative p-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary via-primary-light to-[#051163] text-white shadow-xl shadow-primary/10">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accent opacity-10 blur-[80px] -mr-20 -mt-20 rounded-full"></div>
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 blur-[60px] -ml-16 -mb-16 rounded-full"></div>
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 pb-20 font-['Outfit']">
+            {/* Header Section - Modern & Clean */}
+            <header className="relative p-12 overflow-hidden rounded-[3rem] bg-unelma-navy text-white shadow-2xl shadow-unelma-navy/10 border border-white/5">
+                {/* Abstract Background Accents */}
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-unelma-orange/10 to-transparent"></div>
+                <div className="absolute -top-24 -right-24 w-64 h-64 bg-unelma-orange opacity-10 blur-[90px] rounded-full"></div>
+                <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white opacity-5 blur-[80px] rounded-full"></div>
 
-                <div className="relative flex flex-col md:flex-row justify-between items-center gap-8">
+                <div className="relative flex flex-col md:flex-row justify-between items-center gap-10">
                     <div className="text-center md:text-left">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest mb-4"
-                        >
-                            <ShieldCheck size={10} className="text-accent" /> System Administrator
-                        </motion.div>
-                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter mb-2 uppercase">
-                            Owner <span className="text-accent">Control</span>
+                        <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 uppercase leading-none">
+                            Admin <span className="text-unelma-orange">Central</span>
                         </h1>
-                        <p className="text-white/60 font-bold max-w-sm text-sm">
-                            Kendalikan seluruh ekosistem Unelma di sini.
+                        <p className="text-white/50 font-bold max-w-md text-sm leading-relaxed uppercase tracking-wide">
+                            Pusat kendali operasional dan manajemen infrastruktur ekosistem digital Unelma.
                         </p>
-                    </div>
-
-                    <div className="flex bg-white/10 backdrop-blur-md p-1.5 rounded-xl border border-white/10 items-center">
-                        <div className="px-5 py-3 flex items-center gap-2.5 text-emerald-400 font-black text-[9px] uppercase tracking-widest border-r border-white/10">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-                            Online
-                        </div>
-                        <div className="px-5 py-3 flex items-center gap-2.5 text-white/70 font-black text-[9px] uppercase tracking-widest">
-                            <Database size={14} className="text-accent" />
-                            Node-01
-                        </div>
                     </div>
                 </div>
             </header>
 
-            {/* Overview Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[
-                    { label: 'Organisasi', value: '12', icon: School, color: 'text-primary' },
-                    { label: 'Total Siswa', value: '4.5k', icon: Users, color: 'text-accent' },
-                    { label: 'Kapasitas', value: '98%', icon: Activity, color: 'text-green-600' },
-                    { label: 'Security', value: 'Active', icon: ShieldCheck, color: 'text-primary' },
-                ].map((stat, i) => (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        key={i}
-                        className="bg-white border border-slate-100 p-6 rounded-[2rem] group hover:border-primary/20 transition-all shadow-lg relative overflow-hidden"
-                    >
-                        <div className="absolute top-0 right-0 p-5 opacity-[0.03]">
-                            <stat.icon size={40} />
-                        </div>
-                        <stat.icon className={`${stat.color} mb-3`} size={20} strokeWidth={2.5} />
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                        <p className="text-3xl font-black text-slate-900 tracking-tighter">{stat.value}</p>
-                    </motion.div>
-                ))}
+            {/* Overview Stats - Proportional & Modern */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard
+                    label="Institusi Aktif"
+                    value={stats.activeOrgs}
+                    icon={School}
+                    isLoading={loading}
+                    color="text-unelma-navy"
+                />
+                <StatCard
+                    label="Total Siswa"
+                    value={formatNumber(stats.totalStudents)}
+                    icon={Users}
+                    isLoading={loading}
+                    color="text-unelma-orange"
+                />
+                <StatCard
+                    label="Server Load"
+                    value="18%"
+                    icon={Activity}
+                    color="text-emerald-500"
+                />
+                <StatCard
+                    label="Licensing"
+                    value="Healthy"
+                    icon={LayoutDashboard}
+                    color="text-unelma-navy"
+                />
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 grid md:grid-cols-2 gap-8">
+            <div className="grid lg:grid-cols-12 gap-10">
+                {/* Main Action Grid */}
+                <div className="lg:col-span-8 grid md:grid-cols-2 gap-8">
                     <QuickAction
-                        label="Manajemen Sekolah"
-                        desc="Daftarkan institusi baru, atur subdomain, dan kelola lisensi penggunaan platform secara terpusat."
+                        label="Master Institusi"
+                        desc="Registrasi sekolah baru, manajemen proktor utama, serta pemantauan status subdomain institusi."
                         icon={School}
                         href="/dashboard/admin/orgs"
-                        color="text-primary"
+                        color="bg-unelma-navy/10 text-unelma-navy"
+                        tag="Core"
                     />
                     <QuickAction
-                        label="Pengaturan Global"
-                        desc="Konfigurasi sistem, backup database, dan manajemen API key platform pusat backend."
+                        label="Unelma Hub"
+                        desc="Kelola katalog layanan, paket harga berlangganan, konten pendaratan, dan manajemen produk digital."
+                        icon={Zap}
+                        href="/dashboard/admin/unelma"
+                        color="bg-unelma-orange/10 text-unelma-orange"
+                        tag="Sales"
+                    />
+                    <QuickAction
+                        label="Pengguna Sistem"
+                        desc="Manajemen akun administrator platform, penugasan role khusus, dan audit log aktivitas sistem."
+                        icon={Users}
+                        href="/dashboard/admin/users"
+                        color="bg-slate-100 text-slate-600"
+                    />
+                    <QuickAction
+                        label="Global Settings"
+                        desc="Konfigurasi parameter sistem, integrasi payment gateway, dan manajemen kunci API platform."
                         icon={Settings2}
                         href="/dashboard/admin/settings"
-                        color="text-accent"
+                        color="bg-slate-100 text-slate-600"
                     />
                 </div>
 
-                <div className="bg-primary border border-primary-light rounded-[3rem] p-10 flex flex-col justify-between relative overflow-hidden group shadow-2xl shadow-primary/20">
-                    <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-accent/20 blur-[80px] rounded-full group-hover:scale-125 transition-transform duration-1000"></div>
-                    <div className="relative z-10">
-                        <div className="w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8 border border-white/20">
-                            <PlusCircle className="text-accent" size={32} />
+                {/* Sidebar Call to Action - Vibrant & Professional */}
+                <div className="lg:col-span-4">
+                    <div className="h-full bg-white rounded-[2.5rem] p-10 border border-slate-200/60 shadow-xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-unelma-orange/5 rounded-full blur-2xl -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-1000"></div>
+
+                        <div className="relative z-10 flex flex-col h-full">
+                            <div className="w-16 h-16 bg-unelma-navy rounded-2xl flex items-center justify-center mb-8 shadow-xl shadow-unelma-navy/10 border border-white/5">
+                                <PlusCircle className="text-unelma-orange" size={28} strokeWidth={2.5} />
+                            </div>
+
+                            <h2 className="text-3xl font-black text-unelma-navy leading-[0.9] mb-4 tracking-tighter uppercase">
+                                Akselerasi <br /> <span className="text-unelma-orange">Edu-Tech</span>
+                            </h2>
+                            <p className="text-slate-500 font-bold text-xs leading-relaxed mb-10 uppercase tracking-tight">
+                                Mari kembangkan ekosistem dengan menambahkan mitra institusi baru dalam satu langkah mudah.
+                            </p>
+
+                            <div className="mt-auto space-y-4">
+                                <Link href="/dashboard/admin/orgs">
+                                    <button className="w-full bg-unelma-orange hover:bg-[#ffb340] text-unelma-navy font-black text-[10px] uppercase tracking-[0.2em] py-5 rounded-2xl shadow-xl shadow-unelma-orange/20 transition-all flex justify-center items-center gap-3 active:scale-[0.98]">
+                                        Daftar Sekolah Baru <ArrowRight size={16} />
+                                    </button>
+                                </Link>
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-center gap-4">
+                                    <div className="flex -space-x-2">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white"></div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                                        Data sinkron dengan ekosistem real-time.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <h2 className="text-3xl font-black text-white leading-none mb-4 tracking-tighter uppercase">Ekspansi <br /><span className="text-accent">Jaringan</span></h2>
-                        <p className="text-white/60 font-medium text-sm leading-relaxed mb-8">
-                            Mulai ekspansi ekosistem Anda dengan menambahkan sekolah mitra dalam hitungan detik.
-                        </p>
                     </div>
-                    <Link href="/dashboard/admin/orgs" className="relative z-10">
-                        <button className="w-full bg-accent hover:bg-orange-500 text-white tracking-widest uppercase text-[10px] font-black py-5 rounded-2xl shadow-xl shadow-accent/20 transition-all flex justify-center items-center gap-2">
-                            Daftarkan Sekarang <ArrowRight size={16} />
-                        </button>
-                    </Link>
                 </div>
             </div>
         </div>

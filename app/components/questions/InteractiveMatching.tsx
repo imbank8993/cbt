@@ -97,7 +97,7 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
     return (
         <div className="space-y-6 relative z-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Header / Info */}
-            <div className="bg-slate-50/50 p-4 rounded-xl border border-dashed border-slate-200 flex items-center justify-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            <div className="bg-slate-50/50 p-4 rounded-xl border border-dashed border-slate-200 flex items-center justify-center gap-4 text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                 <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-sm bg-primary" /> Item Terpilih
                 </div>
@@ -107,41 +107,56 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
 
             {/* CONTAINER FOR SVG AND GRID */}
             <div ref={containerRef} className="space-y-8 py-4 relative animate-in fade-in slide-in-from-bottom-4 duration-500">
-                {/* SVG CONNECTORS - Now a direct sibling of the grid for perfect absolute anchoring */}
-                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 overflow-visible hidden md:block">
+                {/* SVG CONNECTORS - Smooth Curves */}
+                <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 overflow-visible">
                     <defs>
-                        <marker id={`arrowhead-${questionId}`} markerWidth="6" markerHeight="4" refX="5" refY="2" orientation="auto">
-                            <polygon points="0 0, 6 2, 0 4" fill="#f8a01b" />
+                        <linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#f8a01b" stopOpacity="0.8" />
+                            <stop offset="100%" stopColor="#f8a01b" stopOpacity="0.4" />
+                        </linearGradient>
+                        <marker id={`arrowhead-${questionId}`} markerWidth="4" markerHeight="3" refX="3.5" refY="1.5" orientation="auto">
+                            <path d="M0,0 L4,1.5 L0,3 Z" fill="#f8a01b" />
                         </marker>
-                        <marker id={`arrowhead-correct-${questionId}`} markerWidth="6" markerHeight="4" refX="5" refY="2" orientation="auto">
-                            <polygon points="0 0, 6 2, 0 4" fill="#10b981" />
+                        <marker id={`arrowhead-correct-${questionId}`} markerWidth="4" markerHeight="3" refX="3.5" refY="1.5" orientation="auto">
+                            <path d="M0,0 L4,1.5 L0,3 Z" fill="#10b981" />
                         </marker>
-                        <marker id={`arrowhead-wrong-${questionId}`} markerWidth="6" markerHeight="4" refX="5" refY="2" orientation="auto">
-                            <polygon points="0 0, 6 2, 0 4" fill="#ef4444" />
+                        <marker id={`arrowhead-wrong-${questionId}`} markerWidth="4" markerHeight="3" refX="3.5" refY="1.5" orientation="auto">
+                            <path d="M0,0 L4,1.5 L0,3 Z" fill="#ef4444" />
                         </marker>
                     </defs>
-                    {links.map((link, i) => (
-                        <motion.path
-                            key={i}
-                            initial={{ pathLength: 0, opacity: 0 }}
-                            animate={{ pathLength: 1, opacity: 1 }}
-                            d={`M ${link.x1} ${link.y1} L ${link.x2} ${link.y2}`}
-                            stroke={link.isCorrect === null ? "#f8a01b" : (link.isCorrect ? "#10b981" : "#ef4444")}
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            fill="none"
-                            markerEnd={link.isCorrect === null ? `url(#arrowhead-${questionId})` : (link.isCorrect ? `url(#arrowhead-correct-${questionId})` : `url(#arrowhead-wrong-${questionId})`)}
-                            className="drop-shadow-sm opacity-70"
-                        />
-                    ))}
+                    {links.map((link, i) => {
+                        // Calculate control points for a smooth curve
+                        const dx = Math.abs(link.x2 - link.x1);
+                        const midX = (link.x1 + link.x2) / 2;
+                        const midY = (link.y1 + link.y2) / 2;
+
+                        // We use a curve that bows slightly outwards
+                        const pathData = `M ${link.x1} ${link.y1} C ${midX + dx / 4} ${link.y1}, ${midX - dx / 4} ${link.y2}, ${link.x2} ${link.y2}`;
+
+                        return (
+                            <motion.path
+                                key={i}
+                                initial={{ pathLength: 0, opacity: 0 }}
+                                animate={{ pathLength: 1, opacity: 1 }}
+                                transition={{ duration: 0.5, ease: "easeOut" }}
+                                d={pathData}
+                                stroke={link.isCorrect === null ? "url(#line-gradient)" : (link.isCorrect ? "#10b981" : "#ef4444")}
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                fill="none"
+                                markerEnd={link.isCorrect === null ? `url(#arrowhead-${questionId})` : (link.isCorrect ? `url(#arrowhead-correct-${questionId})` : `url(#arrowhead-wrong-${questionId})`)}
+                                className="drop-shadow-[0_2px_4px_rgba(248,160,27,0.2)]"
+                            />
+                        );
+                    })}
                 </svg>
 
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-4 relative z-10">
+                <div className="grid grid-cols-2 gap-4 md:gap-4 lg:grid-cols-12 relative z-10">
                     {/* LEFT ITEMS (DOMAIN) */}
-                    <div className="md:col-span-12 lg:col-span-5 space-y-4">
-                        <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2 px-1">
-                            <div className="w-2 h-2 rounded-sm bg-primary" /> Item Domain
-                        </h4>
+                    <div className="md:col-span-1 lg:col-span-5 space-y-3">
+                        <h3 className="text-[10px] font-black text-unelma-navy/40 uppercase tracking-[0.3em] mb-6 flex items-center gap-2 px-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-unelma-orange shadow-[0_0_10px_rgba(248,160,27,0.5)]" /> Kolom Pertanyaan
+                        </h3>
                         {options.map((opt: any) => {
                             const isSelected = selectedLeft === opt.id;
                             const matches = answers[opt.id] || [];
@@ -153,26 +168,26 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
                                             id={getScopedId('btn-left', opt.id)}
                                             disabled={showFeedback}
                                             onClick={() => onSelectLeft(isSelected ? null : opt.id)}
-                                            className={`flex-1 p-5 pr-10 rounded-2xl border-2 text-left font-bold transition-all relative z-10 overflow-hidden text-[15px] ${isSelected ? (showFeedback ? 'border-primary bg-primary/5' : 'border-primary bg-primary/5 shadow-lg shadow-primary/5 -translate-y-0.5') : 'border-slate-100 bg-white hover:border-slate-200 shadow-sm'}`}
+                                            className={`flex-1 p-3 md:p-6 pr-8 md:pr-12 rounded-2xl md:rounded-3xl border-2 text-left font-semibold transition-all relative z-10 overflow-hidden text-[10px] md:text-[13px] ${isSelected ? 'border-unelma-orange bg-unelma-orange/5 shadow-premium scale-[1.02]' : 'border-slate-100 bg-white hover:border-slate-200 shadow-sm'}`}
                                         >
-                                            <div className="relative z-10 leading-relaxed text-[#030c4d] font-bold">
+                                            <div className="rich-content relative z-10 leading-relaxed text-unelma-navy font-normal w-full overflow-hidden">
                                                 <LatexRenderer text={opt.option_text || opt.text} />
                                             </div>
                                         </button>
 
                                         <div
                                             id={getScopedId('box-left', opt.id)}
-                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer ${isSelected ? 'bg-primary border-primary scale-110 shadow-lg shadow-primary/20 rotate-0' : 'bg-white border-slate-200 group-hover:border-primary/40 rotate-45 group-hover:rotate-0'}`}
+                                            className={`w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-sm ${isSelected ? 'bg-unelma-orange border-unelma-orange scale-110 shadow-lg shadow-unelma-orange/20' : 'bg-white border-slate-100 group-hover:border-unelma-orange/30'}`}
                                             onClick={() => !showFeedback && onSelectLeft(isSelected ? null : opt.id)}
                                         >
-                                            {isSelected && <div className="w-2 h-2 bg-white rounded-sm animate-pulse" />}
+                                            {isSelected && <div className="w-2.5 h-2.5 bg-unelma-navy rounded-full animate-pulse" />}
                                         </div>
                                     </div>
 
                                     <div className="mt-2 flex flex-wrap gap-2 px-1">
                                         {matches.map((m, mi) => (
-                                            <span key={mi} className="bg-[#f8a01b]/10 text-[#f8a01b] text-[9px] font-black px-3 py-1.5 rounded-xl uppercase tracking-wider border border-[#f8a01b]/20 animate-in zoom-in-50 flex items-center gap-1.5 shadow-sm">
-                                                <div className="w-1 h-1 bg-[#f8a01b] rounded-full" /> {m}
+                                            <span key={mi} className="bg-unelma-orange/10 text-unelma-navy text-[9px] font-black px-3 py-2 rounded-xl uppercase tracking-wider border border-unelma-orange/20 animate-in zoom-in-50 flex items-center gap-2 shadow-sm">
+                                                <div className="w-1 h-1 bg-unelma-orange rounded-full" /> {m}
                                             </span>
                                         ))}
                                     </div>
@@ -184,10 +199,10 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
                     <div className="hidden lg:block lg:col-span-2" />
 
                     {/* RIGHT ITEMS (KODOMAIN) */}
-                    <div className="md:col-span-12 lg:col-span-5 space-y-4">
-                        <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2 px-1">
-                            <div className="w-2 h-2 rounded-sm bg-[#f8a01b]" /> Item Kodomain
-                        </h4>
+                    <div className="md:col-span-1 lg:col-span-5 space-y-3">
+                        <h3 className="text-[10px] font-black text-unelma-navy/40 uppercase tracking-[0.3em] mb-6 flex items-center gap-2 px-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-unelma-orange shadow-[0_0_10px_rgba(248,160,27,0.5)]" /> Kolom Jawaban
+                        </h3>
                         {rightItems.map((rightItem: string) => {
                             const isBeingMatched = selectedLeft && !showFeedback;
 
@@ -195,13 +210,13 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
                                 <div key={rightItem} className="flex items-center gap-3 group">
                                     <div
                                         id={getScopedId('box-right', rightItem)}
-                                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer ${isBeingMatched ? 'border-primary/40 group-hover:border-[#f8a01b] group-hover:bg-[#f8a01b] group-hover:scale-110 group-hover:rotate-0' : 'bg-white border-slate-200 rotate-45'}`}
+                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-xl md:rounded-2xl border-2 flex items-center justify-center transition-all shrink-0 cursor-pointer shadow-sm ${isBeingMatched ? 'border-unelma-orange/40 group-hover:border-unelma-orange group-hover:bg-unelma-orange group-hover:scale-110' : 'bg-white border-slate-100'}`}
                                         onClick={() => {
                                             if (!selectedLeft || showFeedback) return;
                                             onAnswerChange(selectedLeft, rightItem);
                                         }}
                                     >
-                                        <div className={`w-1.5 h-1.5 rounded-sm transition-all ${isBeingMatched ? 'bg-primary/20 group-hover:bg-white' : 'bg-slate-100'}`} />
+                                        <div className={`w-2 h-2 rounded-full transition-all ${isBeingMatched ? 'bg-unelma-navy/20 group-hover:bg-unelma-navy' : 'bg-slate-100'}`} />
                                     </div>
 
                                     <button
@@ -211,9 +226,9 @@ export const InteractiveMatching: React.FC<InteractiveMatchingProps> = ({
                                             if (!selectedLeft) return;
                                             onAnswerChange(selectedLeft, rightItem);
                                         }}
-                                        className={`flex-1 p-5 rounded-2xl border-2 text-left font-bold transition-all text-[15px] ${!selectedLeft || showFeedback ? 'opacity-40 cursor-not-allowed border-slate-50 bg-slate-50/50' : 'border-slate-100 bg-white hover:border-[#f8a01b]/40 hover:bg-[#f8a01b]/5 hover:-translate-x-0.5 shadow-sm'}`}
+                                        className={`flex-1 p-3 md:p-6 rounded-2xl md:rounded-3xl border-2 text-left font-semibold transition-all text-[10px] md:text-[13px] ${!selectedLeft || showFeedback ? 'opacity-40 cursor-not-allowed border-slate-50 bg-slate-50/50' : 'border-slate-100 bg-white hover:border-unelma-orange/40 hover:bg-unelma-orange/5 hover:-translate-x-1 shadow-sm'}`}
                                     >
-                                        <div className="leading-relaxed text-[#030c4d] font-bold">{rightItem}</div>
+                                        <div className="rich-content leading-relaxed text-unelma-navy font-normal w-full overflow-hidden">{rightItem}</div>
                                     </button>
                                 </div>
                             );

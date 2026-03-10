@@ -1175,8 +1175,9 @@ export default function BankDetailPage() {
                             className="bg-white border border-slate-100 rounded-[1.5rem] p-5 md:p-6 hover:shadow-xl hover:border-primary/10 transition-all relative group overflow-hidden"
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <div className="bg-primary text-white text-[10px] font-black px-4 py-1.5 rounded-xl shadow-md shadow-primary/10 uppercase tracking-widest">
-                                    Soal #{idx + 1}
+                                <div className="bg-[#030c4d] text-white px-5 py-2.5 rounded-2xl shadow-xl shadow-[#030c4d]/20 flex items-center gap-2.5 border border-white/10 group-hover:scale-105 transition-transform">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Nomor</span>
+                                    <span className="text-2xl font-black text-[#f8a01b] leading-none">{idx + 1}</span>
                                 </div>
                                 <div className="flex gap-1.5 transition-all">
                                     <button
@@ -1232,7 +1233,7 @@ export default function BankDetailPage() {
                             </div>
 
                             <div className="mb-3 p-4 bg-slate-50/20 rounded-xl border border-slate-100/50 relative group/qtext transition-all">
-                                <div className="text-slate-900 font-bold leading-relaxed text-sm">
+                                <div className="rich-content text-slate-900 font-normal leading-relaxed text-[12pt] max-w-[21cm]">
                                     <LatexRenderer text={q.question_text} />
                                 </div>
                                 {q.type === 'essay' && (
@@ -1313,8 +1314,8 @@ export default function BankDetailPage() {
                                                     <div className="flex-1 min-w-0">
                                                         {isMatching || isCategorization ? (
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-center">
-                                                                <div className="text-sm font-bold text-slate-700 leading-relaxed">
-                                                                    <LatexRenderer text={opt.option_text} />
+                                                                <div className={`flex-1 text-[15px] font-black transition-colors duration-300 break-words min-w-0`}>
+                                                                    <LatexRenderer text={opt.option_text || opt.text} />
                                                                 </div>
                                                                 <div className="flex items-center gap-4">
                                                                     <div className="flex-shrink-0 flex items-center gap-1.5 text-slate-300">
@@ -1339,8 +1340,8 @@ export default function BankDetailPage() {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="text-sm font-bold text-slate-700 leading-relaxed">
-                                                                <LatexRenderer text={opt.option_text} />
+                                                            <div className="relative z-10 leading-relaxed text-unelma-navy font-black break-words overflow-hidden w-full">
+                                                                <LatexRenderer text={opt.option_text || opt.text} />
                                                             </div>
                                                         )}
                                                     </div>
@@ -1368,7 +1369,7 @@ export default function BankDetailPage() {
                                 <div className="w-20 h-20 bg-primary/5 rounded-[2rem] flex items-center justify-center mx-auto mb-8 animate-bounce transition-all">
                                     <Sparkles size={40} className="text-primary opacity-20" />
                                 </div>
-                                <h3 className="text-2xl font-black text-primary tracking-tighter uppercase leading-none mb-3">Mulai Mahakarya Anda</h3>
+                                <h3 className="text-2xl font-black text-primary tracking-tighter uppercase leading-none mb-3">Mulai Buat Soal</h3>
                                 <p className="text-slate-400 font-bold mt-2 text-[11px] max-w-xs mx-auto leading-relaxed">Bank soal ini menanti sentuhan kreatifitas anda. Buat butir soal pertama untuk memulai evaluasi berkualitas.</p>
                                 <button
                                     onClick={() => handleOpenEditor()}
@@ -1395,22 +1396,16 @@ export default function BankDetailPage() {
                             <div className="noise-bg opacity-[0.015]"></div>
 
                             {/* Editor Header */}
-                            <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center relative z-20 bg-gradient-to-r from-primary/10 via-transparent to-accent/5 backdrop-blur-xl">
+                            <div className="px-6 py-3 border-b border-slate-100 flex justify-between items-center relative z-20 bg-gradient-to-r from-primary/10 via-transparent to-accent/5 backdrop-blur-xl shrink-0">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-2">
-                                        <Hash size={24} className="text-white -rotate-2" />
-                                    </div>
                                     <div>
-                                        <h3 className="text-xl font-black text-primary tracking-tighter uppercase leading-none">
-                                            Soal Nomor <span className="text-accent">{editingQuestion ? questions.indexOf(editingQuestion) + 1 : questions.length + 1}</span>
+                                        <h3 className="flex items-center gap-2 tracking-tighter leading-none">
+                                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Nomor</span>
+                                            <span className="text-2xl font-black text-accent">{editingQuestion ? (questions.findIndex(q => q.id === editingQuestion.id) + 1) : questions.length + 1}</span>
                                         </h3>
-                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                                            UNELMA Assessment Design Studio
-                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => {
                                             const tempQ = {
@@ -1433,15 +1428,15 @@ export default function BankDetailPage() {
                                             };
                                             handleOpenView(tempQ);
                                         }}
-                                        className="w-12 h-12 bg-emerald-100 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-2xl transition-all shadow-sm border border-emerald-200 flex items-center justify-center hover:scale-110 active:scale-90 shadow-xl shadow-emerald-500/10"
+                                        className="w-10 h-10 bg-emerald-100 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl transition-all shadow-sm border border-emerald-200 flex items-center justify-center hover:scale-110 active:scale-90 shadow-xl shadow-emerald-500/10"
                                         title="Pratinjau Siswa"
                                     >
-                                        <Eye size={20} />
+                                        <Eye size={18} />
                                     </button>
 
                                     <button
                                         onClick={() => setIsEditorOpen(false)}
-                                        className="px-6 py-3 font-black text-[10px] text-slate-400 hover:text-rose-500 transition-all uppercase tracking-widest active:scale-95"
+                                        className="px-4 py-2 font-black text-[10px] text-slate-400 hover:text-rose-500 transition-all uppercase tracking-widest active:scale-95"
                                     >
                                         Batal
                                     </button>
@@ -1449,42 +1444,43 @@ export default function BankDetailPage() {
                                     <button
                                         onClick={handleSave}
                                         disabled={isSubmitting}
-                                        className="bg-primary hover:bg-primary-light text-white px-8 py-3.5 rounded-2xl font-black shadow-2xl shadow-primary/30 flex items-center gap-3 transition-all active:scale-95 text-[10px] uppercase tracking-[0.2em]"
+                                        className="bg-primary hover:bg-primary-light text-white px-6 py-2.5 rounded-xl font-black shadow-2xl shadow-primary/30 flex items-center gap-3 transition-all active:scale-95 text-[10px] uppercase tracking-[0.2em]"
                                     >
-                                        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={16} strokeWidth={3} />}
-                                        Simpan Mahakarya
+                                        {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Save size={14} strokeWidth={3} />}
+                                        Simpan
                                     </button>
                                 </div>
                             </div>
 
                             <div className="flex-1 flex overflow-hidden relative z-10 bg-slate-50/20">
                                 {/* PANELS: INPUT ONLY (NOW FULL WIDTH) */}
-                                <div className="flex-1 overflow-y-auto custom-scrollbar p-10 space-y-10">
-                                    <form id="q-editor" className="space-y-10 pb-12 max-w-5xl mx-auto">
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-6">
+                                    <form id="q-editor" className="space-y-6 pb-8 text-[12pt] max-w-5xl mx-auto">
 
-                                        {/* Configuration Section */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/40 p-6 rounded-[2rem] border border-white/60 backdrop-blur-sm">
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <Layout size={14} className="text-primary" /> Tipe Evaluasi
+
+                                        {/* TOP SECTION: GLOBAL SETTINGS */}
+                                        <div className="bg-white/80 backdrop-blur-md p-6 rounded-[2.5rem] border border-slate-200/60 shadow-premium/5 flex flex-col md:flex-row items-center gap-8 px-10">
+                                            <div className="flex-1 w-full space-y-2">
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                    <Layout size={12} className="text-primary" /> Tipe Evaluasi
                                                 </label>
                                                 <select
                                                     value={selectedType === 'mcq_complex' ? 'mcq' : selectedType}
                                                     onChange={(e) => setSelectedType(e.target.value as QuestionType)}
-                                                    className="w-full bg-white border border-slate-100 rounded-2xl p-4 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none font-black text-primary transition-all shadow-sm text-xs cursor-pointer hover:bg-slate-50"
+                                                    className="w-full bg-white border border-slate-100 rounded-2xl p-3.5 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none font-black text-primary transition-all shadow-sm text-xs cursor-pointer hover:bg-slate-50"
                                                 >
-                                                    <option value="mcq">Pilihan Ganda (Auto-Detect)</option>
+                                                    <option value="mcq">Pilihan Ganda</option>
                                                     <option value="true_false">Benar / Salah</option>
-                                                    <option value="matching">Penjodohan Data</option>
-                                                    <option value="categorization">Kategori Jawaban</option>
+                                                    <option value="matching">Penjodohan</option>
+                                                    <option value="categorization">Kategori</option>
                                                     <option value="short_answer">Isian Singkat</option>
                                                     <option value="essay">Uraian / Essay</option>
                                                 </select>
                                             </div>
 
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <Sparkles size={14} className="text-accent" /> Poin Soal
+                                            <div className="w-full md:w-[200px] space-y-2">
+                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                    <Sparkles size={12} className="text-accent" /> Poin Soal
                                                 </label>
                                                 <div className="relative group/points">
                                                     <input
@@ -1494,89 +1490,495 @@ export default function BankDetailPage() {
                                                             const val = Number(e.target.value);
                                                             setScoreDefault(isNaN(val) ? 0 : val);
                                                         }}
-                                                        className="w-full bg-white border border-slate-100 rounded-2xl p-4 focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none font-black text-primary transition-all shadow-sm text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                        placeholder="Contoh: 1, 5, 10..."
+                                                        className="w-full bg-white border border-slate-100 rounded-2xl p-3.5 focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none font-black text-primary transition-all shadow-sm text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                        placeholder="Contoh: 1..."
                                                     />
                                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-accent bg-accent/5 px-3 py-1.5 rounded-xl uppercase tracking-widest opacity-0 group-focus-within/points:opacity-100 transition-opacity">
-                                                        Points
+                                                        Pts
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Question Textarea */}
-                                        <div className="space-y-2.5 relative group">
-                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
-                                                <span className="flex items-center gap-2"><Type size={12} className="text-primary" /> Redaksi Pertanyaan</span>
-                                            </label>
-                                            <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-premium/5 question-quill-editor">
-                                                <ReactQuill
-                                                    {...{
-                                                        theme: "snow",
-                                                        value: questionText,
-                                                        onChange: setQuestionText,
-                                                        placeholder: "Tuangkan deskripsi pertanyaan di sini...",
-                                                        modules: {
-                                                            toolbar: {
-                                                                container: [
-                                                                    [{ 'header': [1, 2, 3, false] }],
-                                                                    ['bold', 'italic', 'underline', 'strike'],
-                                                                    [{ 'color': [] }, { 'background': [] }],
-                                                                    [{ 'script': 'sub' }, { 'script': 'super' }],
-                                                                    [{ 'align': [] }],
-                                                                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                                                                    [{ 'indent': '-1' }, { 'indent': '+1' }],
-                                                                    ['link', 'image', 'video', 'formula'],
-                                                                    ['table'],
-                                                                    ['symbol'],
-                                                                    ['clean']
-                                                                ],
-                                                                handlers: {
-                                                                    'symbol': function () {
-                                                                        setIsSymbolPickerOpen(true);
+                                        <div className="flex flex-col lg:flex-row gap-10 items-start">
+                                            {/* LEFT COLUMN: CONTENT (Question + Options) */}
+                                            <div className="flex-1 w-full space-y-10 min-w-0">
+                                                {/* Question Textarea (A4 Simulation) */}
+                                                <div className="flex flex-col items-center space-y-3">
+                                                    <div className="w-full max-w-[21cm] space-y-3">
+                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between px-4">
+                                                            <span className="flex items-center gap-2"><Type size={12} className="text-primary" /> Redaksi Pertanyaan (Layout A4)</span>
+                                                        </label>
+
+                                                        <div className="bg-white rounded-[2.5rem] overflow-hidden border border-slate-200 shadow-premium/10 question-quill-editor w-full min-h-[450px] transition-all relative group/editor">
+                                                            {/* Floating Premium Toolbar */}
+                                                            <div className="sticky top-0 z-[40] w-full bg-white/90 backdrop-blur-xl border-b border-slate-100 px-6 py-2.5 flex justify-center shadow-sm">
+                                                                <div id="quill-toolbar-premium" className="flex items-center gap-1 bg-slate-50 border border-slate-200/60 p-1 rounded-2xl shadow-sm overflow-hidden">
+                                                                    <span className="ql-formats !mr-0">
+                                                                        <select className="ql-header !h-8 !bg-white !border-none !rounded-xl !text-[10px] !font-black !px-2 shadow-sm !w-28 !cursor-pointer" defaultValue="">
+                                                                            <option value="1">Judul 1</option>
+                                                                            <option value="2">Judul 2</option>
+                                                                            <option value="">Normal</option>
+                                                                        </select>
+                                                                    </span>
+                                                                    <div className="w-px h-5 bg-slate-200 mx-1" />
+                                                                    <span className="ql-formats !mr-0 flex items-center gap-0.5">
+                                                                        <button className="ql-bold !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" />
+                                                                        <button className="ql-italic !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" />
+                                                                        <button className="ql-underline !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" />
+                                                                    </span>
+                                                                    <div className="w-px h-5 bg-slate-200 mx-1" />
+                                                                    <span className="ql-formats !mr-0 flex items-center gap-0.5">
+                                                                        <button className="ql-list !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" value="ordered" />
+                                                                        <button className="ql-list !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" value="bullet" />
+                                                                        <select className="ql-align !w-7 !h-8 hover:!bg-white !rounded-lg" />
+                                                                    </span>
+                                                                    <div className="w-px h-5 bg-slate-200 mx-1" />
+                                                                    <span className="ql-formats !mr-0 flex items-center gap-0.5">
+                                                                        <button className="ql-script !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" value="sub" />
+                                                                        <button className="ql-script !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" value="super" />
+                                                                    </span>
+                                                                    <div className="w-px h-5 bg-slate-200 mx-1" />
+                                                                    <span className="ql-formats !mr-0 flex items-center gap-0.5">
+                                                                        <button className="ql-link !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" />
+                                                                        <button className="ql-clean !w-8 !h-8 !p-1.5 rounded-lg hover:!bg-white hover:text-primary transition-all" />
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <ReactQuill
+                                                                {...{
+                                                                    theme: "snow",
+                                                                    value: questionText,
+                                                                    onChange: setQuestionText,
+                                                                    placeholder: "Tuangkan deskripsi pertanyaan di sini...",
+                                                                    modules: {
+                                                                        toolbar: '#quill-toolbar-premium',
+                                                                        imageResize: {
+                                                                            parchment: (ReactQuill as any).Quill?.import('parchment'),
+                                                                            modules: ['Resize', 'DisplaySize']
+                                                                        }
                                                                     },
-                                                                    'formula': function () {
-                                                                        setIsEquationBuilderOpen(true);
-                                                                    },
-                                                                    'table': function () {
-                                                                        setIsTableConfigOpen(true);
-                                                                    },
-                                                                    'image': function () {
-                                                                        const input = document.createElement('input');
-                                                                        input.setAttribute('type', 'file');
-                                                                        input.setAttribute('accept', 'image/*');
-                                                                        input.click();
-                                                                        input.onchange = () => {
-                                                                            const file = input.files?.[0];
-                                                                            if (file) {
-                                                                                const reader = new FileReader();
-                                                                                reader.readAsDataURL(file);
-                                                                                reader.onload = () => {
-                                                                                    setImageToCrop(reader.result as string);
-                                                                                    setCropperContext({ type: 'question' });
-                                                                                    setIsCropperOpen(true);
-                                                                                };
-                                                                            }
-                                                                        };
+                                                                    ref: (el: any) => {
+                                                                        if (el && !quillInstance) {
+                                                                            setQuillInstance(el.getEditor());
+                                                                        }
                                                                     }
-                                                                }
-                                                            },
-                                                            imageResize: {
-                                                                parchment: (ReactQuill as any).Quill?.import('parchment'),
-                                                                modules: ['Resize', 'DisplaySize']
-                                                            }
-                                                        },
-                                                        ref: (el: any) => {
-                                                            if (el && !quillInstance) {
-                                                                setQuillInstance(el.getEditor());
-                                                            }
-                                                        }
-                                                    } as any}
-                                                />
+                                                                } as any}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Options Editor */}
+                                                {(['mcq', 'mcq_complex', 'true_false', 'matching', 'categorization', 'short_answer'].includes(selectedType)) && (
+                                                    <div className="space-y-5">
+                                                        <div className="flex justify-between items-center bg-white/50 p-3 rounded-xl border border-slate-100/50">
+                                                            {selectedType !== 'matching' && (
+                                                                <h4 className="text-[9px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                                    <ListChecks size={14} className="text-primary" />
+                                                                    {selectedType === 'short_answer' ? 'Konfigurasi Kunci Jawaban' :
+                                                                        selectedType === 'categorization' ? 'Item & Kategori' : 'Opsi Jawaban'}
+                                                                </h4>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Categorization Table */}
+                                                        {selectedType === 'categorization' && (
+                                                            <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-100">
+                                                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Kelola Daftar Kategori</label>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {categories.map((cat, idx) => (
+                                                                        <div key={idx} className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2 shadow-sm animate-in fade-in zoom-in duration-200">
+                                                                            <span className="text-[10px] font-black text-primary uppercase tracking-tighter">{cat}</span>
+                                                                            <button type="button" onClick={() => setCategories(categories.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-rose-500 transition-colors">
+                                                                                <X size={12} />
+                                                                            </button>
+                                                                        </div>
+                                                                    ))}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const name = prompt('Input Nama Kategori:');
+                                                                            if (name && !categories.includes(name)) setCategories([...categories, name]);
+                                                                        }}
+                                                                        className="px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-primary hover:text-primary transition-all text-[10px] font-bold flex items-center gap-1.5"
+                                                                    >
+                                                                        <Plus size={12} /> Kategori Baru
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Short Answer Setup */}
+                                                        {selectedType === 'short_answer' && (
+                                                            <div className="space-y-6">
+                                                                <div className="flex justify-between items-center">
+                                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Konfigurasi Isian Singkat</label>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => {
+                                                                            const current = metadata.blanks || [];
+                                                                            if (current.length < 2) {
+                                                                                setMetadata({ ...metadata, blanks: [...current, { variations: [] }] });
+                                                                            } else {
+                                                                                alert('Maksimal 2 isian singkat diperbolehkan.');
+                                                                            }
+                                                                        }}
+                                                                        className="text-[9px] font-black text-primary bg-primary/5 px-4 py-2 rounded-lg hover:bg-primary/10 transition-all uppercase tracking-widest border border-primary/10"
+                                                                    >
+                                                                        + Tambah Isian
+                                                                    </button>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                    {(metadata.blanks || [{ variations: [] }]).map((blank: any, bIdx: number) => (
+                                                                        <div key={bIdx} className="bg-slate-50/50 border border-slate-100 rounded-2xl p-6 space-y-4 relative group">
+                                                                            <div className="flex justify-between items-center">
+                                                                                <span className="text-[9px] font-black text-primary uppercase tracking-tighter">Isian #{bIdx + 1}</span>
+                                                                                {bIdx > 0 && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            const next = metadata.blanks.filter((_: any, i: number) => i !== bIdx);
+                                                                                            setMetadata({ ...metadata, blanks: next });
+                                                                                        }}
+                                                                                        className="text-slate-300 hover:text-rose-500 transition-colors"
+                                                                                    >
+                                                                                        <Trash2 size={14} />
+                                                                                    </button>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="space-y-3">
+                                                                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Variasi Jawaban Benar:</label>
+                                                                                <div className="flex flex-wrap gap-2">
+                                                                                    {(blank.variations || []).map((v: string, vIdx: number) => (
+                                                                                        <div key={vIdx} className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2 shadow-sm">
+                                                                                            <span className="text-[10px] font-bold text-slate-700">{v}</span>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => {
+                                                                                                    const nextBlanks = [...metadata.blanks];
+                                                                                                    nextBlanks[bIdx].variations = nextBlanks[bIdx].variations.filter((_: any, i: number) => i !== vIdx);
+                                                                                                    setMetadata({ ...metadata, blanks: nextBlanks });
+                                                                                                }}
+                                                                                                className="text-slate-300 hover:text-rose-500"
+                                                                                            >
+                                                                                                <X size={10} />
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    ))}
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => {
+                                                                                            const val = prompt('Tambah variasi jawaban benar:');
+                                                                                            if (val) {
+                                                                                                const nextBlanks = metadata.blanks ? [...metadata.blanks] : [{ variations: [] }];
+                                                                                                if (!nextBlanks[bIdx]) nextBlanks[bIdx] = { variations: [] };
+                                                                                                nextBlanks[bIdx].variations = [...(nextBlanks[bIdx].variations || []), val];
+                                                                                                setMetadata({ ...metadata, blanks: nextBlanks });
+                                                                                            }
+                                                                                        }}
+                                                                                        className="px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-primary hover:text-primary transition-all text-[10px] font-bold"
+                                                                                    >
+                                                                                        + Tambah Variasi
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="grid grid-cols-1 gap-4">
+                                                            {selectedType === 'matching' ? (
+                                                                <div className="space-y-6 animate-in fade-in zoom-in duration-700 min-h-[500px]">
+                                                                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 mb-10 py-4 border-b border-slate-100/50">
+                                                                        <div className="relative z-10 text-center md:text-left">
+                                                                            <div className="flex items-center justify-center md:justify-start gap-3">
+                                                                                <div className="bg-primary/5 p-2 rounded-lg">
+                                                                                    <ListChecks size={18} className="text-primary" />
+                                                                                </div>
+                                                                                <div>
+                                                                                    <h3 className="text-sm font-black text-slate-800 tracking-tight uppercase leading-none">Editor Penjodohan</h3>
+                                                                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Hubungkan butir soal dengan jawaban yang tepat</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div ref={editorMatchingContainerRef} className="relative min-h-[400px]">
+                                                                        <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
+                                                                            {editorMatchingLinks.map((link, i) => (
+                                                                                <motion.line
+                                                                                    key={i}
+                                                                                    initial={{ pathLength: 0, opacity: 0 }}
+                                                                                    animate={{ pathLength: 1, opacity: 1 }}
+                                                                                    x1={link.x1} y1={link.y1} x2={link.x2} y2={link.y2}
+                                                                                    stroke="#94a3b8" strokeWidth="1.2" markerEnd="url(#editor-arrowhead)"
+                                                                                />
+                                                                            ))}
+                                                                        </svg>
+
+                                                                        <div className="grid grid-cols-2 gap-12 relative z-30">
+                                                                            <div className="space-y-3">
+                                                                                {options.map((opt, idx) => (
+                                                                                    <div
+                                                                                        key={idx}
+                                                                                        id={`editor-matching-left-${idx}`}
+                                                                                        onClick={() => setSelectedLeft(selectedLeft === String(idx) ? null : String(idx))}
+                                                                                        className={`p-2.5 rounded-xl border-2 transition-all cursor-pointer ${selectedLeft === String(idx) ? 'bg-white border-slate-400 shadow-lg scale-[1.02]' : 'bg-white/50 border-slate-100 hover:border-slate-200'}`}
+                                                                                    >
+                                                                                        <div className="flex items-center gap-4">
+                                                                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-[10px] ${selectedLeft === String(idx) ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-400'}`}>{idx + 1}</div>
+                                                                                            <input
+                                                                                                value={opt.text}
+                                                                                                onChange={(e) => updateOption(idx, { text: e.target.value })}
+                                                                                                onClick={(e) => e.stopPropagation()}
+                                                                                                placeholder="Butir Soal..."
+                                                                                                className="flex-1 bg-transparent border-none outline-none font-black text-primary placeholder:text-slate-300 text-[11pt]"
+                                                                                            />
+                                                                                            <button type="button" onClick={(e) => { e.stopPropagation(); removeOption(idx); }} className="text-slate-300 hover:text-rose-500"><Trash2 size={16} /></button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                ))}
+                                                                                <button type="button" onClick={addOption} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-300 hover:text-primary hover:border-primary/50 transition-all font-black text-[10px] uppercase tracking-widest">+ Tambah Baris</button>
+                                                                            </div>
+
+                                                                            <div className="space-y-3 text-right">
+                                                                                {(metadata.right_items || []).map((rightItem: string) => {
+                                                                                    const isMatched = selectedLeft !== null && (options[parseInt(selectedLeft)]?.match_texts || []).includes(rightItem);
+                                                                                    return (
+                                                                                        <div
+                                                                                            key={rightItem}
+                                                                                            id={`editor-matching-right-${btoa(rightItem).replace(/=/g, '')}`}
+                                                                                            onClick={() => {
+                                                                                                if (selectedLeft === null) return;
+                                                                                                const idx = parseInt(selectedLeft);
+                                                                                                const currentMatches = options[idx].match_texts || [];
+                                                                                                const nextMatches = currentMatches.includes(rightItem)
+                                                                                                    ? currentMatches.filter((m: string) => m !== rightItem)
+                                                                                                    : [...currentMatches, rightItem];
+                                                                                                updateOption(idx, { match_texts: nextMatches });
+                                                                                            }}
+                                                                                            className={`p-2.5 rounded-xl border-2 transition-all cursor-pointer ${isMatched ? 'bg-white border-slate-400 shadow-md scale-[1.02]' : 'bg-white/50 border-slate-100 hover:border-slate-200'}`}
+                                                                                        >
+                                                                                            <div className="flex items-center gap-4">
+                                                                                                <button type="button" onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    const next = (metadata.right_items || []).filter((i: string) => i !== rightItem);
+                                                                                                    setMetadata({ ...metadata, right_items: next });
+                                                                                                    setOptions(options.map(o => ({ ...o, match_texts: (o.match_texts || []).filter((m: string) => m !== rightItem) })));
+                                                                                                }} className="text-slate-300 hover:text-rose-500"><Trash2 size={16} /></button>
+                                                                                                <input
+                                                                                                    value={rightItem}
+                                                                                                    onChange={(e) => {
+                                                                                                        const newVal = e.target.value;
+                                                                                                        const oldVal = rightItem;
+                                                                                                        const nextItems = (metadata.right_items || []).map((i: string) => i === oldVal ? newVal : i);
+                                                                                                        setMetadata({ ...metadata, right_items: nextItems });
+                                                                                                        setOptions(options.map(o => ({ ...o, match_texts: (o.match_texts || []).map((m: string) => m === oldVal ? newVal : m) })));
+                                                                                                    }}
+                                                                                                    onClick={(e) => e.stopPropagation()}
+                                                                                                    className="flex-1 bg-transparent border-none outline-none font-bold text-slate-600 text-right placeholder:text-slate-200 text-[11pt]"
+                                                                                                />
+                                                                                                {isMatched && <Check size={16} className="text-primary" strokeWidth={4} />}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    );
+                                                                                })}
+                                                                                <button type="button" onClick={() => {
+                                                                                    const item = prompt('Nama Item Kolom Kanan:');
+                                                                                    if (item && !(metadata.right_items || []).includes(item)) setMetadata({ ...metadata, right_items: [...(metadata.right_items || []), item] });
+                                                                                }} className="w-full py-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-300 hover:text-slate-600 hover:border-slate-400 transition-all font-black text-[10px] uppercase tracking-widest">+ Tambah Jawaban</button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (selectedType === 'short_answer' || selectedType === 'essay') ? null : (
+                                                                <div className="space-y-4">
+                                                                    {options.map((opt, idx) => (
+                                                                        <div key={idx} className={`p-2.5 rounded-2xl border transition-all ${opt.isCorrect ? 'bg-primary/5 border-primary ring-1 ring-primary/20' : 'bg-white border-slate-100 shadow-sm'}`}>
+                                                                            <div className="flex gap-3 items-center">
+                                                                                {/* Option Badge */}
+                                                                                <div className="flex flex-col gap-1 items-center">
+                                                                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Opsi {String.fromCharCode(65 + idx)}</span>
+                                                                                    {selectedType === 'mcq' || selectedType === 'mcq_complex' ? (
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                const newOptions = [...options];
+                                                                                                newOptions[idx].isCorrect = !newOptions[idx].isCorrect;
+                                                                                                const correctCount = newOptions.filter(o => o.isCorrect).length;
+                                                                                                if (correctCount > 1) setSelectedType('mcq_complex');
+                                                                                                else if (correctCount === 1) setSelectedType('mcq');
+                                                                                                setOptions(newOptions);
+                                                                                            }}
+                                                                                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${opt.isCorrect ? 'bg-primary text-white shadow-lg' : 'bg-slate-100 text-slate-300 hover:bg-slate-200'}`}
+                                                                                        >
+                                                                                            <Check size={16} strokeWidth={4} />
+                                                                                        </button>
+                                                                                    ) : selectedType === 'true_false' ? (
+                                                                                        <div className="flex flex-col gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                                                                                            <button type="button" onClick={() => updateOption(idx, { isCorrect: true })} className={`px-2 py-1 rounded-lg text-[9px] font-black ${opt.isCorrect ? 'bg-green-500 text-white shadow-sm' : 'text-slate-400'}`}>B</button>
+                                                                                            <button type="button" onClick={() => updateOption(idx, { isCorrect: false })} className={`px-2 py-1 rounded-lg text-[9px] font-black ${!opt.isCorrect ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-400'}`}>S</button>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-black text-slate-400 text-xs">{idx + 1}</div>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                <div className="flex-1 space-y-2">
+                                                                                    <div className="flex items-center gap-3 bg-slate-50/50 p-1.5 rounded-xl border border-slate-100">
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                const input = document.createElement('input');
+                                                                                                input.type = 'file';
+                                                                                                input.accept = 'image/*';
+                                                                                                input.onchange = (e: any) => {
+                                                                                                    const file = e.target.files[0];
+                                                                                                    if (file) {
+                                                                                                        const reader = new FileReader();
+                                                                                                        reader.onload = () => {
+                                                                                                            setImageToCrop(reader.result as string);
+                                                                                                            setCropperContext({ type: 'option_replace', index: idx });
+                                                                                                            setIsCropperOpen(true);
+                                                                                                        };
+                                                                                                        reader.readAsDataURL(file);
+                                                                                                    }
+                                                                                                };
+                                                                                                input.click();
+                                                                                            }}
+                                                                                            className="w-8 h-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary transition-all shadow-sm"
+                                                                                        >
+                                                                                            <ImageIcon size={16} />
+                                                                                        </button>
+                                                                                        <input
+                                                                                            value={opt.text}
+                                                                                            onChange={(e) => updateOption(idx, { text: e.target.value })}
+                                                                                            placeholder="Tulis opsi jawaban..."
+                                                                                            className="flex-1 bg-transparent border-none outline-none font-black text-primary placeholder:text-slate-300 text-[11pt]"
+                                                                                        />
+                                                                                        <button type="button" onClick={() => removeOption(idx)} className="text-slate-300 hover:text-rose-500 transition-colors p-2"><Trash2 size={16} /></button>
+                                                                                    </div>
+
+                                                                                    {selectedType === 'categorization' && (
+                                                                                        <div className="flex flex-wrap gap-2">
+                                                                                            {categories.map(cat => (
+                                                                                                <button
+                                                                                                    key={cat}
+                                                                                                    type="button"
+                                                                                                    onClick={() => {
+                                                                                                        const next = (opt.category_names || []).includes(cat) ? (opt.category_names || []).filter((c: string) => c !== cat) : [...(opt.category_names || []), cat];
+                                                                                                        updateOption(idx, { category_names: next });
+                                                                                                    }}
+                                                                                                    className={`px-3 py-1.5 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${opt.category_names?.includes(cat) ? 'bg-primary text-white border-primary shadow-sm' : 'bg-white border-slate-100 text-slate-400'}`}
+                                                                                                >
+                                                                                                    {cat}
+                                                                                                </button>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+
+                                                                    {selectedType !== 'true_false' && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={addOption}
+                                                                            className="px-8 py-4 border-2 border-dashed border-slate-100 rounded-[2.5rem] text-slate-300 hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-3 font-black text-[10px] uppercase tracking-widest group"
+                                                                        >
+                                                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-transform"><Plus size={18} strokeWidth={3} /></div>
+                                                                            Tambah Item / Opsi Baru
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {/* AI & Kisi-kisi Section */}
-                                            <div className="space-y-4 bg-accent/5 p-6 rounded-[2.5rem] border border-accent/10 relative overflow-hidden group/ai mt-6">
+                                            {/* RIGHT COLUMN: TOOLS ONLY */}
+                                            <div className="lg:w-[220px] w-full shrink-0 space-y-6 lg:sticky lg:top-8">
+                                                {/* Specialized Media Insertion Card */}
+                                                <div className="bg-white/70 backdrop-blur-md p-6 rounded-[2.5rem] border border-slate-200/60 shadow-xl shadow-slate-200/5 space-y-5">
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] block text-center opacity-70">Sisipan Media</span>
+
+                                                    <div className="grid grid-cols-1 gap-2.5">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const input = document.createElement('input');
+                                                                input.setAttribute('type', 'file');
+                                                                input.setAttribute('accept', 'image/*');
+                                                                input.click();
+                                                                input.onchange = () => {
+                                                                    const file = input.files?.[0];
+                                                                    if (file) {
+                                                                        const reader = new FileReader();
+                                                                        reader.readAsDataURL(file);
+                                                                        reader.onload = () => {
+                                                                            setImageToCrop(reader.result as string);
+                                                                            setCropperContext({ type: 'question' });
+                                                                            setIsCropperOpen(true);
+                                                                        };
+                                                                    }
+                                                                };
+                                                            }}
+                                                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all group"
+                                                        >
+                                                            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-sm group-hover:scale-110 transition-transform">
+                                                                <ImageIcon size={18} />
+                                                            </div>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider">Gambar</span>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsEquationBuilderOpen(true)}
+                                                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all group"
+                                                        >
+                                                            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-sm group-hover:scale-110 transition-transform font-serif font-black italic">
+                                                                f<sub className="text-[8px] mb-1">x</sub>
+                                                            </div>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider">Rumus</span>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsTableConfigOpen(true)}
+                                                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all group"
+                                                        >
+                                                            <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 shadow-sm group-hover:scale-110 transition-transform">
+                                                                <Layout size={18} />
+                                                            </div>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider">Tabel</span>
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsSymbolPickerOpen(true)}
+                                                            className="flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all group"
+                                                        >
+                                                            <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shadow-sm group-hover:scale-110 transition-transform">
+                                                                <Sparkles size={18} />
+                                                            </div>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider">Simbol</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+
+                                        <div className="mt-12 space-y-8 pt-10 border-t border-slate-100/50">
+
+                                            <div className="space-y-4 bg-accent/5 p-6 rounded-[2.5rem] border border-accent/10 relative overflow-hidden group/ai">
                                                 <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover/ai:scale-150 transition-transform duration-1000"></div>
                                                 <div className="flex justify-between items-center relative z-10">
                                                     <label className="text-[10px] font-black text-accent uppercase tracking-[0.2em] flex items-center gap-2">
@@ -1589,7 +1991,7 @@ export default function BankDetailPage() {
                                                             const res = await generateKisiKisiAction(questionText, options.map(o => o.text));
                                                             if (res.success && res.kisi) {
                                                                 setKisiKisi(res.kisi);
-                                                                alert("Kisi-kisi berhasil di-generate! Jangan lupa klik 'Simpan Mahakarya'.");
+                                                                alert("Kisi-kisi berhasil di-generate! Jangan lupa klik 'Simpan'.");
                                                             } else {
                                                                 alert(`Gagal men-generate kisi-kisi: ${res.error || 'Unknown error'}`);
                                                             }
@@ -1613,545 +2015,14 @@ export default function BankDetailPage() {
                                                 </div>
                                             </div>
                                         </div>
-
-
-                                        {/* Options Editor */}
-                                        {(['mcq', 'mcq_complex', 'true_false', 'matching', 'categorization', 'short_answer'].includes(selectedType)) && (
-                                            <div className="space-y-5">
-                                                <div className="flex justify-between items-center bg-white/50 p-3 rounded-xl">
-                                                    <h4 className="text-[9px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                        <ListChecks size={14} className="text-primary" />
-                                                        {selectedType === 'matching' ? 'Pasangan Item (Matching)' :
-                                                            selectedType === 'short_answer' ? 'Konfigurasi Kunci Jawaban' :
-                                                                selectedType === 'categorization' ? 'Item & Kategori' : 'Opsi Jawaban'}
-                                                    </h4>
-                                                    {selectedType !== 'true_false' && selectedType !== 'short_answer' && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={addOption}
-                                                            className="text-[9px] font-black text-white bg-primary hover:bg-primary-light px-5 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center gap-2 uppercase tracking-widest"
-                                                        >
-                                                            <Plus size={14} strokeWidth={3} /> {selectedType === 'matching' ? 'Tambah Baris' : 'Tambah Item'}
-                                                        </button>
-                                                    )}
-                                                </div>
-
-                                                {/* Categorization: Category Management */}
-                                                {selectedType === 'categorization' && (
-                                                    <div className="bg-slate-50 p-4 rounded-xl space-y-3 border border-slate-100">
-                                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Kelola Daftar Kategori</label>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {categories.map((cat, idx) => (
-                                                                <div key={idx} className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2 shadow-sm animate-in fade-in zoom-in duration-200">
-                                                                    <span className="text-[10px] font-black text-primary uppercase tracking-tighter">{cat}</span>
-                                                                    <button type="button" onClick={() => setCategories(categories.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-rose-500 transition-colors">
-                                                                        <X size={12} />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const name = prompt('Input Nama Kategori:');
-                                                                    if (name && !categories.includes(name)) setCategories([...categories, name]);
-                                                                }}
-                                                                className="px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-primary hover:text-primary transition-all text-[10px] font-bold flex items-center gap-1.5"
-                                                            >
-                                                                <Plus size={12} /> Kategori Baru
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Short Answer: Blanks & Variations */}
-                                                {selectedType === 'short_answer' && (
-                                                    <div className="space-y-6">
-                                                        <div className="flex justify-between items-center">
-                                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Konfigurasi Isian Singkat</label>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const current = metadata.blanks || [];
-                                                                    if (current.length < 2) {
-                                                                        setMetadata({ ...metadata, blanks: [...current, { variations: [] }] });
-                                                                    } else {
-                                                                        alert('Maksimal 2 isian singkat diperbolehkan.');
-                                                                    }
-                                                                }}
-                                                                className="text-[9px] font-black text-primary bg-primary/5 px-4 py-2 rounded-lg hover:bg-primary/10 transition-all uppercase tracking-widest border border-primary/10"
-                                                            >
-                                                                + Tambah Isian
-                                                            </button>
-                                                        </div>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                            {(metadata.blanks || [{ variations: [] }]).map((blank: any, bIdx: number) => (
-                                                                <div key={bIdx} className="bg-slate-50/50 border border-slate-100 rounded-2xl p-6 space-y-4 relative group">
-                                                                    <div className="flex justify-between items-center">
-                                                                        <span className="text-[9px] font-black text-primary uppercase tracking-tighter">Isian #{bIdx + 1}</span>
-                                                                        {bIdx > 0 && (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const next = metadata.blanks.filter((_: any, i: number) => i !== bIdx);
-                                                                                    setMetadata({ ...metadata, blanks: next });
-                                                                                }}
-                                                                                className="text-slate-300 hover:text-rose-500 transition-colors"
-                                                                            >
-                                                                                <Trash2 size={14} />
-                                                                            </button>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="space-y-3">
-                                                                        <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Variasi Jawaban Benar:</label>
-                                                                        <div className="flex flex-wrap gap-2">
-                                                                            {(blank.variations || []).map((v: string, vIdx: number) => (
-                                                                                <div key={vIdx} className="bg-white px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2 shadow-sm">
-                                                                                    <span className="text-[10px] font-bold text-slate-700">{v}</span>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            const nextBlanks = [...metadata.blanks];
-                                                                                            nextBlanks[bIdx].variations = nextBlanks[bIdx].variations.filter((_: any, i: number) => i !== vIdx);
-                                                                                            setMetadata({ ...metadata, blanks: nextBlanks });
-                                                                                        }}
-                                                                                        className="text-slate-300 hover:text-rose-500"
-                                                                                    >
-                                                                                        <X size={10} />
-                                                                                    </button>
-                                                                                </div>
-                                                                            ))}
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => {
-                                                                                    const val = prompt('Tambah variasi jawaban benar:');
-                                                                                    if (val) {
-                                                                                        const nextBlanks = metadata.blanks ? [...metadata.blanks] : [{ variations: [] }];
-                                                                                        if (!nextBlanks[bIdx]) nextBlanks[bIdx] = { variations: [] };
-                                                                                        nextBlanks[bIdx].variations = [...(nextBlanks[bIdx].variations || []), val];
-                                                                                        setMetadata({ ...metadata, blanks: nextBlanks });
-                                                                                    }
-                                                                                }}
-                                                                                className="px-3 py-1.5 rounded-lg border border-dashed border-slate-300 text-slate-400 hover:border-primary hover:text-primary transition-all text-[10px] font-bold"
-                                                                            >
-                                                                                + Tambah Variasi
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-
-                                                <div className="grid grid-cols-1 gap-4">
-                                                    {selectedType === 'matching' ? (
-                                                        <div className="space-y-6 animate-in fade-in zoom-in duration-700">
-                                                            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 mb-12 border-b border-slate-100 pb-8">
-                                                                <div>
-                                                                    <h3 className="text-2xl font-black text-primary tracking-tighter uppercase flex items-center gap-3">
-                                                                        <Sparkles className="text-accent animate-pulse" /> Studio Penjodohan <span className="text-[10px] font-black bg-primary/5 px-3 py-1 rounded-full text-primary/40 not-italic tracking-widest ml-2 border border-primary/5">PRO</span>
-                                                                    </h3>
-                                                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Arsitektur Penjodohan Interaktif</p>
-                                                                </div>
-                                                                <div className="flex flex-wrap justify-center gap-4">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={addOption}
-                                                                        className="bg-slate-50 hover:bg-slate-100 text-primary border border-slate-200 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-sm"
-                                                                    >
-                                                                        <Plus size={14} className="text-accent" /> Tambah Baris Kiri
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const item = prompt('Nama Item Kolom Kanan:');
-                                                                            if (item && !(metadata.right_items || []).includes(item)) {
-                                                                                setMetadata({ ...metadata, right_items: [...(metadata.right_items || []), item] });
-                                                                            }
-                                                                        }}
-                                                                        className="bg-primary hover:bg-primary-light text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-xl shadow-primary/20"
-                                                                    >
-                                                                        <Zap size={14} className="text-accent" /> Tambah Item Kanan
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
-                                                            <div ref={editorMatchingContainerRef} className="relative min-h-[500px] px-4">
-                                                                {/* SVG Connections Layer */}
-                                                                <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
-                                                                    <defs>
-                                                                        <marker id="editor-arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                                                            <polygon points="0 0, 10 3.5, 0 7" fill="#f8a01b" />
-                                                                        </marker>
-                                                                    </defs>
-                                                                    {editorMatchingLinks.map((link, i) => (
-                                                                        <motion.line
-                                                                            key={i}
-                                                                            initial={{ pathLength: 0, opacity: 0 }}
-                                                                            animate={{ pathLength: 1, opacity: 1 }}
-                                                                            x1={link.x1} y1={link.y1} x2={link.x2} y2={link.y2}
-                                                                            stroke="#f8a01b" strokeWidth="2.5" markerEnd="url(#editor-arrowhead)"
-                                                                            strokeDasharray="5,5"
-                                                                            className="drop-shadow-[0_0_8px_rgba(248,160,27,0.5)]"
-                                                                        />
-                                                                    ))}
-                                                                </svg>
-
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-20 md:gap-40 relative z-30">
-                                                                    {/* DOMAIN (LEFT) */}
-                                                                    <div className="space-y-6">
-                                                                        <div className="flex items-center gap-3 px-6 mb-8 text-slate-400">
-                                                                            <div className="w-8 h-[1px] bg-slate-200" />
-                                                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Baris Soal (Kiri)</span>
-                                                                        </div>
-                                                                        {options.map((opt, idx) => (
-                                                                            <motion.div
-                                                                                key={`left-${idx}`}
-                                                                                initial={{ opacity: 0, x: -20 }}
-                                                                                animate={{ opacity: 1, x: 0 }}
-                                                                                transition={{ delay: idx * 0.1 }}
-                                                                                id={`editor-matching-left-${idx}`}
-                                                                                onClick={() => setSelectedLeft(selectedLeft === String(idx) ? null : String(idx))}
-                                                                                className={`group relative bg-white border border-slate-100 p-6 rounded-[2rem] transition-all cursor-pointer hover:border-primary/30 hover:shadow-xl ${selectedLeft === String(idx) ? 'border-primary ring-4 ring-primary/5 scale-[1.02] z-40' : ''}`}
-                                                                            >
-                                                                                <div className="flex items-center gap-4">
-                                                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black transition-all ${selectedLeft === String(idx) ? 'bg-primary text-white rotate-6' : 'bg-slate-50 text-slate-400'}`}>
-                                                                                        {idx + 1}
-                                                                                    </div>
-                                                                                    <div className="flex-1 space-y-2">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <input
-                                                                                                value={opt.text}
-                                                                                                onClick={(e) => e.stopPropagation()}
-                                                                                                onChange={(e) => updateOption(idx, { text: e.target.value })}
-                                                                                                placeholder="Tulis pernyataan..."
-                                                                                                className="flex-1 bg-transparent border-none text-slate-700 font-bold text-sm outline-none placeholder:text-slate-300"
-                                                                                            />
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    const input = document.createElement('input');
-                                                                                                    input.type = 'file';
-                                                                                                    input.accept = 'image/*';
-                                                                                                    input.onchange = (ev: any) => {
-                                                                                                        const file = ev.target.files[0];
-                                                                                                        if (file) {
-                                                                                                            const reader = new FileReader();
-                                                                                                            reader.onload = (re: any) => {
-                                                                                                                setImageToCrop(re.target.result);
-                                                                                                                setCropperContext({ type: 'option', index: idx });
-                                                                                                                setIsCropperOpen(true);
-                                                                                                            };
-                                                                                                            reader.readAsDataURL(file);
-                                                                                                        }
-                                                                                                    };
-                                                                                                    input.click();
-                                                                                                }}
-                                                                                                className="p-2 text-slate-300 hover:text-primary transition-colors"
-                                                                                            >
-                                                                                                <ImageIcon size={16} />
-                                                                                            </button>
-                                                                                        </div>
-                                                                                        <div className="flex flex-wrap gap-2">
-                                                                                            {opt.match_texts?.map((m: string) => (
-                                                                                                <span key={m} className="text-[8px] font-black text-accent bg-accent/10 px-2 py-1 rounded-full uppercase truncate max-w-[100px]">→ {m}</span>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        onClick={(e) => { e.stopPropagation(); removeOption(idx); }}
-                                                                                        className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition-all p-2"
-                                                                                    >
-                                                                                        <Trash2 size={16} />
-                                                                                    </button>
-                                                                                </div>
-                                                                                {selectedLeft === String(idx) && (
-                                                                                    <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-primary shadow-lg animate-pulse z-50">
-                                                                                        <ArrowRight size={16} strokeWidth={3} />
-                                                                                    </div>
-                                                                                )}
-                                                                            </motion.div>
-                                                                        ))}
-                                                                    </div>
-
-                                                                    <div className="space-y-6">
-                                                                        <div className="flex items-center gap-3 px-6 mb-8 text-slate-400 justify-end">
-                                                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Jawaban (Kanan)</span>
-                                                                            <div className="w-8 h-[1px] bg-slate-200" />
-                                                                        </div>
-                                                                        {(metadata.right_items || []).map((rightItem: string) => {
-                                                                            const isMatched = selectedLeft !== null && (options[parseInt(selectedLeft)]?.match_texts || []).includes(rightItem);
-                                                                            return (
-                                                                                <motion.div
-                                                                                    key={rightItem}
-                                                                                    id={`editor-matching-right-${btoa(rightItem).replace(/=/g, '')}`}
-                                                                                    initial={{ opacity: 0, x: 20 }}
-                                                                                    animate={{ opacity: 1, x: 0 }}
-                                                                                    onClick={() => {
-                                                                                        if (selectedLeft === null) return;
-                                                                                        const idx = parseInt(selectedLeft);
-                                                                                        const currentMatches = options[idx].match_texts || [];
-                                                                                        const nextMatches = currentMatches.includes(rightItem)
-                                                                                            ? currentMatches.filter((m: string) => m !== rightItem)
-                                                                                            : [...currentMatches, rightItem];
-                                                                                        updateOption(idx, { match_texts: nextMatches });
-                                                                                    }}
-                                                                                    className={`group bg-white border border-slate-100 p-6 rounded-[2rem] transition-all cursor-pointer hover:border-primary/30 hover:shadow-xl ${isMatched ? 'border-primary ring-4 ring-primary/5 scale-[1.02]' : ''} ${selectedLeft !== null ? 'hover:scale-[1.02]' : ''}`}
-                                                                                >
-                                                                                    <div className="flex items-center gap-4">
-                                                                                        <div className="flex-1 space-y-2">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <button
-                                                                                                    type="button"
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        const input = document.createElement('input');
-                                                                                                        input.type = 'file';
-                                                                                                        input.accept = 'image/*';
-                                                                                                        input.onchange = (ev: any) => {
-                                                                                                            const file = ev.target.files[0];
-                                                                                                            if (file) {
-                                                                                                                const reader = new FileReader();
-                                                                                                                reader.onload = (re: any) => {
-                                                                                                                    setImageToCrop(re.target.result);
-                                                                                                                    setCropperContext({ type: 'matching_right', item: rightItem });
-                                                                                                                    setIsCropperOpen(true);
-                                                                                                                };
-                                                                                                                reader.readAsDataURL(file);
-                                                                                                            }
-                                                                                                        };
-                                                                                                        input.click();
-                                                                                                    }}
-                                                                                                    className="p-2 text-slate-300 hover:text-primary transition-colors"
-                                                                                                >
-                                                                                                    <ImageIcon size={16} />
-                                                                                                </button>
-                                                                                                <input
-                                                                                                    value={rightItem}
-                                                                                                    onClick={(e) => e.stopPropagation()}
-                                                                                                    onChange={(e) => {
-                                                                                                        const newVal = e.target.value;
-                                                                                                        const oldVal = rightItem;
-                                                                                                        const nextItems = (metadata.right_items || []).map((i: string) => i === oldVal ? newVal : i);
-                                                                                                        setMetadata({ ...metadata, right_items: nextItems });
-                                                                                                        setOptions(options.map(o => ({
-                                                                                                            ...o,
-                                                                                                            match_texts: (o.match_texts || []).map((m: string) => m === oldVal ? newVal : m)
-                                                                                                        })));
-                                                                                                    }}
-                                                                                                    className="flex-1 bg-transparent border-none text-slate-700 font-bold text-sm outline-none placeholder:text-slate-300 text-right"
-                                                                                                />
-                                                                                                {/* EDIT IMAGE ICON */}
-                                                                                                {(() => {
-                                                                                                    const match = rightItem.match(/<img.*?src=["'](.*?)["'].*?>/i);
-                                                                                                    return match ? (
-                                                                                                        <button
-                                                                                                            type="button"
-                                                                                                            onClick={(e) => {
-                                                                                                                e.stopPropagation();
-                                                                                                                setImageToCrop(match[1]);
-                                                                                                                setCropperContext({ type: 'matching_replace', item: rightItem });
-                                                                                                                setIsCropperOpen(true);
-                                                                                                            }}
-                                                                                                            className="p-2 text-amber-500 hover:text-amber-600 transition-colors bg-amber-50 rounded-lg border border-amber-100"
-                                                                                                            title="Edit Gambar"
-                                                                                                        >
-                                                                                                            <Crop size={14} />
-                                                                                                        </button>
-                                                                                                    ) : null;
-                                                                                                })()}
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isMatched ? 'bg-primary text-white shadow-lg' : 'bg-slate-50 text-slate-300'}`}>
-                                                                                            {isMatched ? <Check size={16} strokeWidth={4} /> : <Zap size={14} />}
-                                                                                        </div>
-                                                                                        <button
-                                                                                            type="button"
-                                                                                            onClick={(e) => {
-                                                                                                e.stopPropagation();
-                                                                                                const next = (metadata.right_items || []).filter((i: string) => i !== rightItem);
-                                                                                                setMetadata({ ...metadata, right_items: next });
-                                                                                                setOptions(options.map(o => ({
-                                                                                                    ...o,
-                                                                                                    match_texts: (o.match_texts || []).filter((m: string) => m !== rightItem)
-                                                                                                })));
-                                                                                            }}
-                                                                                            className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition-all p-2"
-                                                                                        >
-                                                                                            <Trash2 size={16} />
-                                                                                        </button>
-                                                                                    </div>
-                                                                                </motion.div>
-                                                                            );
-                                                                        })}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="mt-12 flex justify-center">
-                                                                <div className="bg-slate-50 rounded-full px-8 py-4 border border-slate-100 flex items-center gap-6 shadow-sm">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-                                                                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">Penjodohan Aktif</span>
-                                                                    </div>
-                                                                    <div className="w-[1px] h-4 bg-slate-200" />
-                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Klik butir di kiri, lalu hubungkan ke jawaban di kanan.</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ) : (selectedType === 'short_answer' || selectedType === 'essay') ? null : options.map((opt, idx) => (
-                                                        <motion.div
-                                                            key={idx}
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            className={`p-5 rounded-2xl border transition-all ${opt.isCorrect ? 'bg-primary/5 border-primary ring-1 ring-primary/20' : 'bg-white border-slate-100 shadow-sm'}`}
-                                                        >
-                                                            <div className="flex gap-5 items-start">
-                                                                {/* Type-based Action Icon */}
-                                                                {selectedType === 'mcq' || selectedType === 'mcq_complex' ? (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const newOptions = [...options];
-                                                                            newOptions[idx].isCorrect = !newOptions[idx].isCorrect;
-                                                                            const correctCount = newOptions.filter(o => o.isCorrect).length;
-                                                                            if (correctCount > 1) setSelectedType('mcq_complex');
-                                                                            else setSelectedType('mcq');
-                                                                            setOptions(newOptions);
-                                                                        }}
-                                                                        className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center transition-all ${opt.isCorrect ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' : 'bg-slate-100 text-slate-300 hover:bg-slate-200'}`}
-                                                                    >
-                                                                        <Check size={18} strokeWidth={4} />
-                                                                    </button>
-                                                                ) : selectedType === 'true_false' ? (
-                                                                    <div className="flex flex-col gap-1 items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => updateOption(idx, { isCorrect: true })}
-                                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${opt.isCorrect ? 'bg-green-500 text-white shadow-md' : 'text-slate-400 hover:text-primary'}`}
-                                                                        >
-                                                                            B
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => updateOption(idx, { isCorrect: false })}
-                                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!opt.isCorrect ? 'bg-rose-500 text-white shadow-md' : 'text-slate-400 hover:text-primary'}`}
-                                                                        >
-                                                                            S
-                                                                        </button>
-                                                                    </div>
-                                                                ) : selectedType === 'categorization' ? (
-                                                                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black">
-                                                                        {idx + 1}
-                                                                    </div>
-                                                                ) : null}
-
-                                                                <div className="flex-1 space-y-4">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                                            {selectedType === 'categorization' ? 'Redaksi Item Soal' : `Opsi ${String.fromCharCode(65 + idx)}`}
-                                                                        </span>
-                                                                        {opt.isCorrect && (selectedType === 'mcq' || selectedType === 'mcq_complex') && (
-                                                                            <span className="text-[8px] font-black text-primary uppercase bg-primary/10 px-2 py-0.5 rounded">Kunci Jawaban</span>
-                                                                        )}
-                                                                    </div>
-
-                                                                    {/* Core Input */}
-                                                                    <div className="flex items-center gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const input = document.createElement('input');
-                                                                                input.type = 'file';
-                                                                                input.accept = 'image/*';
-                                                                                input.onchange = (e: any) => {
-                                                                                    const file = e.target.files[0];
-                                                                                    if (file) {
-                                                                                        const reader = new FileReader();
-                                                                                        reader.onload = (re: any) => {
-                                                                                            setImageToCrop(re.target.result);
-                                                                                            setCropperContext({ type: 'option', index: idx });
-                                                                                            setIsCropperOpen(true);
-                                                                                        };
-                                                                                        reader.readAsDataURL(file);
-                                                                                    }
-                                                                                };
-                                                                                input.click();
-                                                                            }}
-                                                                            className="p-2 text-slate-300 hover:text-primary transition-colors bg-white rounded-lg shadow-sm border border-slate-100"
-                                                                        >
-                                                                            <ImageIcon size={16} />
-                                                                        </button>
-                                                                        <input
-                                                                            required
-                                                                            placeholder={"Tulis teks atau sisipkan gambar..."}
-                                                                            value={opt.text}
-                                                                            onChange={(e) => updateOption(idx, { text: e.target.value })}
-                                                                            className="flex-1 bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-200"
-                                                                        />
-
-                                                                        {/* EDIT IMAGE ICON */}
-                                                                        {(() => {
-                                                                            const match = opt.text.match(/<img.*?src=["'](.*?)["'].*?>/i);
-                                                                            return match ? (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        setImageToCrop(match[1]);
-                                                                                        setCropperContext({ type: 'option_replace', index: idx });
-                                                                                        setIsCropperOpen(true);
-                                                                                    }}
-                                                                                    className="p-2 text-amber-500 hover:text-amber-600 transition-colors bg-amber-50 rounded-lg border border-amber-100"
-                                                                                    title="Edit Gambar"
-                                                                                >
-                                                                                    <Crop size={14} />
-                                                                                </button>
-                                                                            ) : null;
-                                                                        })()}
-
-                                                                        {selectedType === 'categorization' && (
-                                                                            <div className="flex flex-wrap gap-2 animate-in slide-in-from-left-2 duration-300">
-                                                                                {categories.map(cat => (
-                                                                                    <button
-                                                                                        key={cat}
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            const current = opt.category_names || [];
-                                                                                            const next = current.includes(cat)
-                                                                                                ? current.filter((c: string) => c !== cat)
-                                                                                                : [...current, cat];
-                                                                                            updateOption(idx, { category_names: next });
-                                                                                        }}
-                                                                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all ${opt.category_names?.includes(cat) ? 'bg-primary text-white border-primary shadow-md' : 'bg-white border-slate-100 text-slate-400 hover:border-primary/30'}`}
-                                                                                    >
-                                                                                        {opt.category_names?.includes(cat) && <Check size={10} strokeWidth={4} />}
-                                                                                        {cat}
-                                                                                    </button>
-                                                                                ))}
-                                                                            </div>
-                                                                        )}
-
-                                                                        <button type="button" onClick={() => removeOption(idx)} className="text-slate-200 hover:text-rose-500 p-2 transition-colors">
-                                                                            <Trash2 size={16} />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </motion.div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
                                     </form>
                                 </div>
                             </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                        </motion.div >
+                    </div >
+                )
+                }
+            </AnimatePresence >
 
             {/* Student View Modal / Global Preview / Simulation Engine */}
             <AnimatePresence>
@@ -2271,7 +2142,7 @@ export default function BankDetailPage() {
                                                             {isWide ? (
                                                                 /* WIDE MODE: question + options in one full-width card */
                                                                 <>
-                                                                    <div className="flex flex-col min-w-0 h-full overflow-hidden">
+                                                                    <div className="flex flex-col min-w-0 h-full overflow-hidden lg:col-span-2">
                                                                         <div className="bg-white border-2 border-slate-200/60 rounded-[3rem] p-8 lg:p-12 flex-1 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] flex flex-col overflow-hidden relative group">
                                                                             <div className="shrink-0 mb-8">
                                                                                 <div className="flex justify-between items-end mb-3 px-1">
@@ -2414,21 +2285,21 @@ export default function BankDetailPage() {
                                                                             const isCorrect = isSimulating && score === (q.score_default || 1);
                                                                             const isPartial = isSimulating && score > 0 && score < (q.score_default || 1);
 
-                                                                            let btnClass = "w-full aspect-square rounded-lg flex items-center justify-center font-black text-[11px] transition-all duration-300 border-2 relative group ";
+                                                                            let btnClass = "w-full aspect-square rounded-xl flex items-center justify-center font-black text-[13px] transition-all duration-300 border-2 relative group ";
 
-                                                                            if (isCurrent) {
+                                                                            if (isCurrent && !viewingQuestion) {
                                                                                 btnClass += "bg-[#030c4d] text-white border-[#030c4d] shadow-lg shadow-[#030c4d]/20 scale-105 z-10 ring-2 ring-[#030c4d]/10";
                                                                             } else if (isSimulating) {
                                                                                 if (isCorrect) btnClass += "bg-emerald-500 text-white border-emerald-500 shadow-md hover:scale-105 ";
                                                                                 else if (isPartial) btnClass += "bg-amber-500 text-white border-amber-500 shadow-md hover:scale-105 ";
                                                                                 else if (isAnswered) btnClass += "bg-rose-500 text-white border-rose-500 shadow-md hover:scale-105 ";
-                                                                                else btnClass += "bg-slate-50 text-slate-300 border-slate-100 ";
+                                                                                else btnClass += "bg-slate-100 text-slate-400 border-slate-200 ";
                                                                             } else if (isDoubtful) {
-                                                                                btnClass += "bg-[#f8a01b] text-white border-[#f8a01b] shadow-md hover:bg-[#e08e15]";
+                                                                                btnClass += "bg-[#f8a01b] text-white border-[#f8a01b] shadow-md shadow-[#f8a01b]/20 hover:scale-105";
                                                                             } else if (isAnswered) {
-                                                                                btnClass += "bg-blue-50/80 text-[#030c4d] border-blue-100/50 shadow-sm hover:bg-blue-100";
+                                                                                btnClass += "bg-blue-50 text-[#030c4d] border-blue-100 shadow-sm hover:bg-blue-100";
                                                                             } else {
-                                                                                btnClass += "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/20 hover:bg-white hover:text-primary";
+                                                                                btnClass += "bg-slate-100 text-slate-400 border-slate-200 hover:border-slate-300 hover:bg-slate-200/50";
                                                                             }
 
                                                                             return (
@@ -2961,6 +2832,6 @@ export default function BankDetailPage() {
                     }
                 }}
             />
-        </div>
+        </div >
     );
 }

@@ -120,7 +120,34 @@ export async function POST(req: Request) {
                         });
                     }
 
-                    // 6. Update transaction with the new user_id
+                    // 6. Create Subscription
+                    const startDate = new Date();
+                    const endDate = new Date();
+                    let durationDays = 30; // Default
+
+                    // Try to get duration from pricelist if item_type is pricelist
+                    if (transaction.item_type === 'pricelist' && transaction.item_id) {
+                        const { data: pkgData } = await supabaseAdmin
+                            .from('unelma_pricelist')
+                            .select('duration_days')
+                            .eq('id', transaction.item_id)
+                            .single();
+                        if (pkgData) durationDays = pkgData.duration_days;
+                    }
+
+                    endDate.setDate(startDate.getDate() + durationDays);
+
+                    await supabaseAdmin
+                        .from('organization_subscriptions')
+                        .insert({
+                            organization_id: orgId,
+                            package_id: (transaction.item_type === 'pricelist' ? transaction.item_id : null),
+                            start_date: startDate.toISOString(),
+                            end_date: endDate.toISOString(),
+                            status: 'active'
+                        });
+
+                    // 7. Update transaction with the new user_id
                     await supabaseAdmin
                         .from('unelma_transactions')
                         .update({ user_id: userId })

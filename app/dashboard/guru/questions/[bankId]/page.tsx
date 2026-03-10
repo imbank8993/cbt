@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, ChevronLeft,
@@ -9,7 +9,7 @@ import {
     BookOpen, Eye, Layout,
     Type, ListChecks, Hash,
     ArrowRight, Sparkles, Activity, Zap,
-    Clock, ShieldCheck, FileDown, MoreVertical,
+    Clock, ShieldCheck, FileDown, MoreVertical, Undo, Redo,
     Upload, Download, FileText, Target, List, FileSearch, Image as ImageIcon, Crop
 } from 'lucide-react';
 import { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, BorderStyle, TextRun, AlignmentType, VerticalAlign } from "docx";
@@ -147,9 +147,51 @@ export default function BankDetailPage() {
     // Categorization State
     const [categories, setCategories] = useState<string[]>([]);
 
+    // Undo/Redo History
+    const [history, setHistory] = useState<any[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+    const [isInternalUpdate, setIsInternalUpdate] = useState(false);
+
     // Kisi-kisi State
     const [kisiKisi, setKisiKisi] = useState('');
     const [isGeneratingAI, setIsGeneratingAI] = useState<string | null>(null);
+
+    // Safety Refs for High-Accuracy Sync
+    const historyIndexRef = useRef(-1);
+    const historyRef = useRef<any[]>([]);
+    const isInternalUpdateRef = useRef(false);
+
+    // Stable Refs for Editor Content
+    const stateRef = useRef({
+        questionText: '',
+        options: [] as any[],
+        selectedType: 'mcq' as QuestionType,
+        scoreDefault: 1,
+        metadata: {} as any,
+        categories: [] as string[],
+        kisiKisi: ''
+    });
+
+    useEffect(() => {
+        stateRef.current = {
+            questionText,
+            options,
+            selectedType,
+            scoreDefault,
+            metadata,
+            categories,
+            kisiKisi
+        };
+    }, [questionText, options, selectedType, scoreDefault, metadata, categories, kisiKisi]);
+
+    useEffect(() => { historyIndexRef.current = historyIndex; }, [historyIndex]);
+    useEffect(() => { historyRef.current = history; }, [history]);
+
+    const setInternalFlag = (val: boolean) => {
+        setIsInternalUpdate(val);
+        isInternalUpdateRef.current = val;
+    };
+
 
     useEffect(() => {
         loadData();
@@ -504,10 +546,155 @@ export default function BankDetailPage() {
         setIsLoading(false);
     };
 
+    // --- Undo/Redo Logic ---
+    const getEditorSnapshot = useCallback(() => {
+        // Uses the LATEST data from refs to avoid closure traps
+        const s = stateRef.current;
+        return {
+            questionText: s.questionText,
+            options: JSON.parse(JSON.stringify(s.options)),
+            selectedType: s.selectedType,
+            scoreDefault: s.scoreDefault,
+            metadata: JSON.parse(JSON.stringify(s.metadata)),
+            categories: [...s.categories],
+            kisiKisi: s.kisiKisi
+        };
+    }, []);
+
+    const saveToHistory = useCallback((customSnapshot?: any) => {
+        if (isInternalUpdateRef.current) return;
+
+        const snapshot = customSnapshot || getEditorSnapshot();
+        const currentIndex = historyIndexRef.current;
+        const currentHistory = historyRef.current;
+        const lastSaved = currentHistory[currentIndex];
+
+        if (lastSaved && JSON.stringify(lastSaved) === JSON.stringify(snapshot)) return;
+
+        const nextHistory = currentHistory.slice(0, currentIndex + 1);
+        nextHistory.push(snapshot);
+        if (nextHistory.length > 50) nextHistory.shift();
+
+        setHistory(nextHistory);
+        setHistoryIndex(nextHistory.length - 1);
+    }, [getEditorSnapshot]);
+
+    const saveSnapshotImmediately = useCallback((customSnapshot?: any) => {
+        saveToHistory(customSnapshot);
+    }, [saveToHistory]);
+
+    const applySnapshot = useCallback((snapshot: any, newIndex: number) => {
+        if (!snapshot) return;
+        setInternalFlag(true);
+        // CRITICAL: Update ref immediately to prevent race conditions in rapid calls
+        historyIndexRef.current = newIndex;
+
+        try {
+            setQuestionText(snapshot.questionText || '');
+            setOptions(JSON.parse(JSON.stringify(snapshot.options || [])));
+            setSelectedType(snapshot.selectedType || 'mcq');
+            setScoreDefault(snapshot.scoreDefault || 1);
+            setMetadata(JSON.parse(JSON.stringify(snapshot.metadata || {})));
+            setCategories([...(snapshot.categories || [])]);
+            setKisiKisi(snapshot.kisiKisi || '');
+            setHistoryIndex(newIndex);
+        } finally {
+            // Keep flag true long enough for effects/renders to settle
+            setTimeout(() => setInternalFlag(false), 300);
+        }
+    }, [getEditorSnapshot]); // Added missing dependency
+
+    const undo = useCallback(() => {
+        const snapshot = getEditorSnapshot();
+        const currentIndex = historyIndexRef.current;
+        const currentHistory = historyRef.current;
+        const lastSaved = currentHistory[currentIndex];
+
+        const isCurrentlyDirty = JSON.stringify(lastSaved) !== JSON.stringify(snapshot);
+
+        if (isCurrentlyDirty) {
+            // Save current "dirty" state as the new future, then go back
+            const nextHistory = [...currentHistory.slice(0, currentIndex + 1), snapshot];
+            setHistory(nextHistory);
+            if (lastSaved) applySnapshot(lastSaved, currentIndex);
+            else if (currentIndex > 0) applySnapshot(currentHistory[currentIndex - 1], currentIndex - 1);
+        } else {
+            if (currentIndex <= 0) return;
+            applySnapshot(currentHistory[currentIndex - 1], currentIndex - 1);
+        }
+    }, [getEditorSnapshot, applySnapshot]);
+
+    const redo = useCallback(() => {
+        const currentIndex = historyIndexRef.current;
+        const currentHistory = historyRef.current;
+        if (currentIndex < 0 || currentIndex >= currentHistory.length - 1) return;
+        applySnapshot(currentHistory[currentIndex + 1], currentIndex + 1);
+    }, [applySnapshot]);
+
+    // Auto-save history (Fixed: Does not reset during continuous typing)
+    useEffect(() => {
+        if (!isEditorOpen || isInternalUpdateRef.current) return;
+        const interval = setInterval(() => {
+            saveToHistory();
+        }, 3000); // Periodic save every 3s if dirty
+        return () => clearInterval(interval);
+    }, [isEditorOpen, saveToHistory]);
+
+    // Short-debounce save on pause
+    useEffect(() => {
+        if (!isEditorOpen || isInternalUpdateRef.current) return;
+        const timeout = setTimeout(() => {
+            saveToHistory();
+        }, 500);
+        return () => clearTimeout(timeout);
+    }, [questionText, options, selectedType, scoreDefault, metadata, categories, kisiKisi, isEditorOpen, saveToHistory]);
+
+    // Save on Blur
+    useEffect(() => {
+        const handleGlobalBlur = (e: FocusEvent) => {
+            if (!isEditorOpen) return;
+            saveToHistory();
+        };
+        window.addEventListener('blur', handleGlobalBlur, true);
+        return () => window.removeEventListener('blur', handleGlobalBlur, true);
+    }, [isEditorOpen, saveToHistory]);
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!isEditorOpen) return;
+
+            const target = e.target as HTMLElement;
+            const isQuill = target.closest('.question-quill-editor');
+            const isInput = target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable ||
+                isQuill;
+
+            const key = e.key.toLowerCase();
+            const isCtrl = e.ctrlKey || e.metaKey;
+
+            if (isCtrl) {
+                if (key === 'z' && !e.shiftKey) {
+                    if (isInput) return; // Native handles it
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    undo();
+                } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+                    if (isInput) return; // Native handles it
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    redo();
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [isEditorOpen, undo, redo]);
+
     // Resize Logic
     const handleMouseDown = (e: React.MouseEvent, column: string) => {
         setIsResizing(column);
-        e.preventDefault();
     };
 
     useEffect(() => {
@@ -584,6 +771,29 @@ export default function BankDetailPage() {
                 match_texts: o.metadata?.match_texts || (o.metadata?.match_text ? [o.metadata.match_text] : []),
                 category_names: o.metadata?.category_names || (o.metadata?.category_name ? [o.metadata.category_name] : [])
             })));
+
+            // Initial History Snapshot
+            const initialSnapshot = {
+                questionText: q.question_text,
+                options: q.bank_question_options.map((o: any) => ({
+                    id: o.id,
+                    text: o.option_text,
+                    isCorrect: o.is_correct,
+                    order: o.order,
+                    weight: o.weight,
+                    match_texts: o.metadata?.match_texts || (o.metadata?.match_text ? [o.metadata.match_text] : []),
+                    category_names: o.metadata?.category_names || (o.metadata?.category_name ? [o.metadata.category_name] : [])
+                })),
+                selectedType: q.type,
+                scoreDefault: q.score_default || 1,
+                metadata: q.metadata || {},
+                categories: q.metadata?.categories || [],
+                kisiKisi: q.metadata?.kisi_kisi || ''
+            };
+            setHistory([initialSnapshot]);
+            setHistoryIndex(0);
+            historyRef.current = [initialSnapshot];
+            historyIndexRef.current = 0;
         } else {
             setEditingQuestion(null);
             setSelectedType('mcq');
@@ -592,14 +802,30 @@ export default function BankDetailPage() {
             setMetadata({});
             setCategories([]);
             setKisiKisi('');
-            setOptions([
+            const initialOptions = [
                 { text: '', isCorrect: true, order: 0, weight: 1, match_texts: [], category_names: [] },
                 { text: '', isCorrect: false, order: 1, weight: 0, match_texts: [], category_names: [] },
                 { text: '', isCorrect: false, order: 2, weight: 0, match_texts: [], category_names: [] },
                 { text: '', isCorrect: false, order: 3, weight: 0, match_texts: [], category_names: [] }
-            ]);
+            ];
+            setOptions(initialOptions);
+
+            const initialSnapshot = {
+                questionText: '',
+                options: initialOptions,
+                selectedType: 'mcq' as QuestionType,
+                scoreDefault: 1,
+                metadata: {},
+                categories: [],
+                kisiKisi: ''
+            };
+            setHistory([initialSnapshot]);
+            setHistoryIndex(0);
+            historyRef.current = [initialSnapshot];
+            historyIndexRef.current = 0;
         }
         setIsEditorOpen(true);
+        isInternalUpdateRef.current = false;
     };
 
     const generateKisiForQuestion = async (qId: string, text: string, opts: any[]) => {
@@ -732,12 +958,30 @@ export default function BankDetailPage() {
         await updateQuestionMetadataAction(questionId, { question_layout: layout });
     };
 
-    const addOption = () => setOptions([...options, { text: '', isCorrect: false, order: options.length, weight: 0 }]);
-    const removeOption = (idx: number) => setOptions(options.filter((_, i) => i !== idx));
+    const handleTypeChange = (type: QuestionType) => {
+        setSelectedType(type);
+        saveSnapshotImmediately({ ...getEditorSnapshot(), selectedType: type });
+    };
+
+    const addOption = () => {
+        const newOpts = [...options, { text: '', isCorrect: false, order: options.length, weight: 0 }];
+        setOptions(newOpts);
+        saveSnapshotImmediately({ ...getEditorSnapshot(), options: newOpts });
+    };
+    const removeOption = (idx: number) => {
+        const newOpts = options.filter((_, i) => i !== idx);
+        setOptions(newOpts);
+        saveSnapshotImmediately({ ...getEditorSnapshot(), options: newOpts });
+    };
     const updateOption = (idx: number, fields: any) => {
         const newOpts = [...options];
         newOpts[idx] = { ...newOpts[idx], ...fields };
         setOptions(newOpts);
+        // We don't save immediately for text updates to avoid history overflow,
+        // but for structural changes, we do.
+        if (fields.isCorrect !== undefined || fields.match_texts !== undefined || fields.category_names !== undefined) {
+            saveSnapshotImmediately({ ...getEditorSnapshot(), options: newOpts });
+        }
     };
 
     const handleDelete = async (qId: string) => {
@@ -1137,8 +1381,9 @@ export default function BankDetailPage() {
                             className="bg-white border border-slate-100 rounded-[1.5rem] p-5 md:p-6 hover:shadow-xl hover:border-primary/10 transition-all relative group overflow-hidden"
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <div className="bg-primary text-white text-[10px] font-black px-4 py-1.5 rounded-xl shadow-md shadow-primary/10 uppercase tracking-widest">
-                                    Soal #{idx + 1}
+                                <div className="bg-[#030c4d] text-white px-5 py-2.5 rounded-2xl shadow-xl shadow-[#030c4d]/20 flex items-center gap-2.5 border border-white/10 group-hover:scale-105 transition-transform">
+                                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Nomor</span>
+                                    <span className="text-2xl font-black text-[#f8a01b] leading-none">{idx + 1}</span>
                                 </div>
                                 <div className="flex gap-1.5 transition-all">
                                     <button
@@ -1194,7 +1439,7 @@ export default function BankDetailPage() {
                             </div>
 
                             <div className="mb-3 p-4 bg-slate-50/20 rounded-xl border border-slate-100/50 relative group/qtext transition-all">
-                                <div className="text-slate-900 font-bold leading-relaxed text-sm">
+                                <div className="rich-content text-slate-900 font-normal leading-relaxed text-[12pt] max-w-[21cm]">
                                     <LatexRenderer text={q.question_text} />
                                 </div>
                                 {q.type === 'essay' && (
@@ -1275,8 +1520,8 @@ export default function BankDetailPage() {
                                                     <div className="flex-1 min-w-0">
                                                         {isMatching || isCategorization ? (
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 items-center">
-                                                                <div className="text-sm font-bold text-slate-700 leading-relaxed">
-                                                                    <LatexRenderer text={opt.option_text} />
+                                                                <div className={`flex-1 text-[15px] font-black transition-colors duration-300 break-words min-w-0`}>
+                                                                    <LatexRenderer text={opt.option_text || opt.text} />
                                                                 </div>
                                                                 <div className="flex items-center gap-4">
                                                                     <div className="flex-shrink-0 flex items-center gap-1.5 text-slate-300">
@@ -1301,8 +1546,8 @@ export default function BankDetailPage() {
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="text-sm font-bold text-slate-700 leading-relaxed">
-                                                                <LatexRenderer text={opt.option_text} />
+                                                            <div className="relative z-10 leading-relaxed text-unelma-navy font-black break-words overflow-hidden w-full">
+                                                                <LatexRenderer text={opt.option_text || opt.text} />
                                                             </div>
                                                         )}
                                                     </div>
@@ -1331,7 +1576,7 @@ export default function BankDetailPage() {
                                 <div className="w-20 h-20 bg-primary/5 rounded-[2rem] flex items-center justify-center mx-auto mb-8 animate-bounce transition-all">
                                     <Sparkles size={40} className="text-primary opacity-20" />
                                 </div>
-                                <h3 className="text-2xl font-black text-primary tracking-tighter uppercase leading-none mb-3">Mulai Mahakarya Anda</h3>
+                                <h3 className="text-2xl font-black text-primary tracking-tighter uppercase leading-none mb-3">Mulai Buat Soal</h3>
                                 <p className="text-slate-400 font-bold mt-2 text-[11px] max-w-xs mx-auto leading-relaxed">Bank soal ini menanti sentuhan kreatifitas anda. Buat butir soal pertama untuk memulai evaluasi berkualitas.</p>
                                 <button
                                     onClick={() => handleOpenEditor()}
@@ -1359,22 +1604,16 @@ export default function BankDetailPage() {
                             <div className="noise-bg opacity-[0.015]"></div>
 
                             {/* Editor Header */}
-                            <div className="px-8 py-5 border-b border-slate-100 flex justify-between items-center relative z-20 bg-gradient-to-r from-primary/10 via-transparent to-accent/5 backdrop-blur-xl">
+                            <div className="px-6 py-3 border-b border-slate-100 flex justify-between items-center relative z-20 bg-gradient-to-r from-primary/10 via-transparent to-accent/5 backdrop-blur-xl shrink-0">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 rotate-2">
-                                        <Hash size={24} className="text-white -rotate-2" />
-                                    </div>
                                     <div>
-                                        <h3 className="text-xl font-black text-primary tracking-tighter uppercase leading-none">
-                                            Soal Nomor <span className="text-accent">{editingQuestion ? questions.indexOf(editingQuestion) + 1 : questions.length + 1}</span>
+                                        <h3 className="flex items-center gap-2 tracking-tighter leading-none">
+                                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Nomor</span>
+                                            <span className="text-2xl font-black text-accent">{editingQuestion ? (questions.findIndex(q => q.id === editingQuestion.id) + 1) : questions.length + 1}</span>
                                         </h3>
-                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></div>
-                                            UNELMA Assessment Design Studio
-                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => {
                                             const tempQ = {
@@ -1397,15 +1636,34 @@ export default function BankDetailPage() {
                                             };
                                             handleOpenView(tempQ);
                                         }}
-                                        className="w-12 h-12 bg-orange-50 hover:bg-[#f8a01b] text-[#f8a01b] hover:text-white rounded-2xl transition-all shadow-sm border border-orange-100 flex items-center justify-center hover:scale-110 active:scale-90 shadow-xl shadow-orange-500/10"
+                                        className="w-10 h-10 bg-emerald-100 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl transition-all shadow-sm border border-emerald-200 flex items-center justify-center hover:scale-110 active:scale-90 shadow-xl shadow-emerald-500/10"
                                         title="Pratinjau Siswa"
                                     >
-                                        <Eye size={20} />
+                                        <Eye size={18} />
                                     </button>
+
+                                    <div className="flex items-center gap-1.5 mr-2 pr-4 border-r border-slate-100">
+                                        <button
+                                            onClick={undo}
+                                            disabled={historyIndex <= 0 && (history[historyIndex] && JSON.stringify(history[historyIndex]) === JSON.stringify(getEditorSnapshot()))}
+                                            className="w-10 h-10 bg-white hover:bg-slate-50 text-slate-400 hover:text-primary rounded-xl transition-all shadow-sm border border-slate-100 flex items-center justify-center disabled:opacity-30 disabled:hover:scale-100 hover:scale-110 active:scale-90"
+                                            title="Undo (Ctrl+Z)"
+                                        >
+                                            <Undo size={16} />
+                                        </button>
+                                        <button
+                                            onClick={redo}
+                                            disabled={historyIndex >= history.length - 1}
+                                            className="w-10 h-10 bg-white hover:bg-slate-50 text-slate-400 hover:text-primary rounded-xl transition-all shadow-sm border border-slate-100 flex items-center justify-center disabled:opacity-30 disabled:hover:scale-100 hover:scale-110 active:scale-90"
+                                            title="Redo (Ctrl+Y / Ctrl+Shift+Z)"
+                                        >
+                                            <Redo size={16} />
+                                        </button>
+                                    </div>
 
                                     <button
                                         onClick={() => setIsEditorOpen(false)}
-                                        className="px-6 py-3 font-black text-[10px] text-slate-400 hover:text-rose-500 transition-all uppercase tracking-widest active:scale-95"
+                                        className="px-4 py-2 font-black text-[10px] text-slate-400 hover:text-rose-500 transition-all uppercase tracking-widest active:scale-95"
                                     >
                                         Batal
                                     </button>
@@ -1413,180 +1671,170 @@ export default function BankDetailPage() {
                                     <button
                                         onClick={handleSave}
                                         disabled={isSubmitting}
-                                        className="bg-primary hover:bg-primary-light text-white px-8 py-3.5 rounded-2xl font-black shadow-2xl shadow-primary/30 flex items-center gap-3 transition-all active:scale-95 text-[10px] uppercase tracking-[0.2em]"
+                                        className="bg-primary hover:bg-primary-light text-white px-6 py-2.5 rounded-xl font-black shadow-2xl shadow-primary/30 flex items-center gap-3 transition-all active:scale-95 text-[10px] uppercase tracking-[0.2em]"
                                     >
-                                        {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={16} strokeWidth={3} />}
-                                        Simpan Mahakarya
+                                        {isSubmitting ? <Loader2 size={12} className="animate-spin" /> : <Save size={14} strokeWidth={3} />}
+                                        Simpan
                                     </button>
                                 </div>
                             </div>
 
                             <div className="flex-1 flex overflow-hidden relative z-10 bg-slate-50/20">
                                 {/* PANELS: INPUT ONLY (NOW FULL WIDTH) */}
-                                <div className="flex-1 overflow-y-auto custom-scrollbar p-10 space-y-10">
-                                    <form id="q-editor" className="space-y-10 pb-12 max-w-5xl mx-auto">
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 space-y-6">
+                                    <form id="q-editor" className="space-y-6 pb-8 text-[12pt] max-w-5xl mx-auto">
 
                                         {/* Configuration Section */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/40 p-6 rounded-[2rem] border border-white/60 backdrop-blur-sm">
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <Layout size={14} className="text-primary" /> Tipe Evaluasi
-                                                </label>
-                                                <select
-                                                    value={selectedType === 'mcq_complex' ? 'mcq' : selectedType}
-                                                    onChange={(e) => setSelectedType(e.target.value as QuestionType)}
-                                                    className="w-full bg-white border border-slate-100 rounded-2xl p-4 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none font-black text-primary transition-all shadow-sm text-xs cursor-pointer hover:bg-slate-50"
-                                                >
-                                                    <option value="mcq">Pilihan Ganda (Auto-Detect)</option>
-                                                    <option value="true_false">Benar / Salah</option>
-                                                    <option value="matching">Penjodohan Data</option>
-                                                    <option value="categorization">Kategori Jawaban</option>
-                                                    <option value="short_answer">Isian Singkat</option>
-                                                    <option value="essay">Uraian / Essay</option>
-                                                </select>
-                                            </div>
+                                        <div className="max-w-2xl">
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 bg-white/40 p-4 rounded-3xl border border-white/60 backdrop-blur-sm">
+                                                <div className="space-y-2 md:col-span-8">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <Layout size={14} className="text-primary" /> Tipe Evaluasi
+                                                    </label>
+                                                    <select
+                                                        value={selectedType === 'mcq_complex' ? 'mcq' : selectedType}
+                                                        onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
+                                                        className="w-full bg-white border border-slate-100 rounded-xl p-3 focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none font-black text-primary transition-all shadow-sm text-xs cursor-pointer hover:bg-slate-50"
+                                                    >
+                                                        <option value="mcq">Pilihan Ganda (Auto-Detect)</option>
+                                                        <option value="true_false">Benar / Salah</option>
+                                                        <option value="matching">Penjodohan Data</option>
+                                                        <option value="categorization">Kategori Jawaban</option>
+                                                        <option value="short_answer">Isian Singkat</option>
+                                                        <option value="essay">Uraian / Essay</option>
+                                                    </select>
+                                                </div>
 
-                                            <div className="space-y-3">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                                    <Sparkles size={14} className="text-accent" /> Poin Soal
-                                                </label>
-                                                <div className="relative group/points">
-                                                    <input
-                                                        type="number"
-                                                        value={isNaN(scoreDefault) ? '' : scoreDefault}
-                                                        onChange={(e) => {
-                                                            const val = Number(e.target.value);
-                                                            setScoreDefault(isNaN(val) ? 0 : val);
-                                                        }}
-                                                        className="w-full bg-white border border-slate-100 rounded-2xl p-4 focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none font-black text-primary transition-all shadow-sm text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                        placeholder="Contoh: 1, 5, 10..."
-                                                    />
-                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-accent bg-accent/5 px-3 py-1.5 rounded-xl uppercase tracking-widest opacity-0 group-focus-within/points:opacity-100 transition-opacity">
-                                                        Points
+                                                <div className="space-y-2 md:col-span-4">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                                        <Sparkles size={14} className="text-accent" /> Poin Soal
+                                                    </label>
+                                                    <div className="relative group/points">
+                                                        <input
+                                                            type="number"
+                                                            value={isNaN(scoreDefault) ? '' : scoreDefault}
+                                                            onChange={(e) => {
+                                                                const val = Number(e.target.value);
+                                                                setScoreDefault(isNaN(val) ? 0 : val);
+                                                            }}
+                                                            className="w-full bg-white border border-slate-100 rounded-xl p-3 focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none font-black text-primary transition-all shadow-sm text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                            placeholder="Contoh: 1..."
+                                                        />
+                                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-accent bg-accent/5 px-3 py-1.5 rounded-xl uppercase tracking-widest opacity-0 group-focus-within/points:opacity-100 transition-opacity">
+                                                            Pts
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Question Textarea */}
-                                        <div className="space-y-2.5 relative group">
+                                        <div className="space-y-4">
                                             <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center justify-between">
                                                 <span className="flex items-center gap-2"><Type size={12} className="text-primary" /> Redaksi Pertanyaan</span>
                                             </label>
-                                            <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-premium/5 question-quill-editor">
-                                                <ReactQuill
-                                                    {...{
-                                                        theme: "snow",
-                                                        value: questionText,
-                                                        onChange: setQuestionText,
-                                                        placeholder: "Tuangkan deskripsi pertanyaan di sini...",
-                                                        modules: {
-                                                            toolbar: {
-                                                                container: [
-                                                                    [{ 'header': [1, 2, 3, false] }],
-                                                                    ['bold', 'italic', 'underline', 'strike'],
-                                                                    [{ 'color': [] }, { 'background': [] }],
-                                                                    [{ 'script': 'sub' }, { 'script': 'super' }],
-                                                                    [{ 'align': [] }],
-                                                                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                                                                    [{ 'indent': '-1' }, { 'indent': '+1' }],
-                                                                    ['link', 'image', 'video', 'formula'],
-                                                                    ['table'],
-                                                                    ['symbol'],
-                                                                    ['clean']
-                                                                ],
-                                                                handlers: {
-                                                                    'symbol': function () {
-                                                                        setIsSymbolPickerOpen(true);
-                                                                    },
-                                                                    'formula': function () {
-                                                                        setIsEquationBuilderOpen(true);
-                                                                    },
-                                                                    'table': function () {
-                                                                        setIsTableConfigOpen(true);
-                                                                    },
-                                                                    'image': function () {
-                                                                        // Check if an image is selected for cropping
-                                                                        const quill = (this as any).quill;
-                                                                        const range = quill.getSelection();
-                                                                        if (range) {
-                                                                            const [leaf] = quill.getLeaf(range.index);
-                                                                            if (leaf && leaf.domNode.tagName === 'IMG') {
-                                                                                setImageToCrop(leaf.domNode.src);
-                                                                                setIsCropperOpen(true);
-                                                                                return;
-                                                                            }
-                                                                        }
 
-                                                                        // Otherwise, upload new
-                                                                        const input = document.createElement('input');
-                                                                        input.setAttribute('type', 'file');
-                                                                        input.setAttribute('accept', 'image/*');
-                                                                        input.click();
-                                                                        input.onchange = () => {
-                                                                            const file = input.files?.[0];
-                                                                            if (file) {
-                                                                                const reader = new FileReader();
-                                                                                reader.readAsDataURL(file);
-                                                                                reader.onload = () => {
-                                                                                    setImageToCrop(reader.result as string);
-                                                                                    setCropperContext({ type: 'question' });
-                                                                                    setIsCropperOpen(true);
-                                                                                };
-                                                                            }
-                                                                        };
+                                            <div className="flex flex-col lg:flex-row gap-6 items-start">
+                                                <div className="flex-1 w-full max-w-[21cm]">
+                                                    <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-premium/5 question-quill-editor">
+                                                        <ReactQuill
+                                                            {...{
+                                                                theme: "snow",
+                                                                value: questionText,
+                                                                onChange: setQuestionText,
+                                                                placeholder: "Tuangkan deskripsi pertanyaan di sini...",
+                                                                modules: {
+                                                                    toolbar: [
+                                                                        [{ 'header': [1, 2, 3, false] }],
+                                                                        ['bold', 'italic', 'underline', 'strike'],
+                                                                        [{ 'color': [] }, { 'background': [] }],
+                                                                        [{ 'script': 'sub' }, { 'script': 'super' }],
+                                                                        [{ 'align': [] }],
+                                                                        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                                                                        [{ 'indent': '-1' }, { 'indent': '+1' }],
+                                                                        ['link', 'clean']
+                                                                    ],
+                                                                    imageResize: {
+                                                                        parchment: (ReactQuill as any).Quill?.import('parchment'),
+                                                                        modules: ['Resize', 'DisplaySize']
+                                                                    }
+                                                                },
+                                                                ref: (el: any) => {
+                                                                    if (el && !quillInstance) {
+                                                                        setQuillInstance(el.getEditor());
                                                                     }
                                                                 }
-                                                            },
-                                                            imageResize: {
-                                                                parchment: (ReactQuill as any).Quill?.import('parchment'),
-                                                                modules: ['Resize', 'DisplaySize']
-                                                            }
-                                                        },
-                                                        ref: (el: any) => {
-                                                            if (el && !quillInstance) {
-                                                                setQuillInstance(el.getEditor());
-                                                            }
-                                                        }
-                                                    } as any}
-                                                />
-                                            </div>
-
-                                            {/* AI & Kisi-kisi Section */}
-                                            <div className="space-y-4 bg-accent/5 p-6 rounded-[2.5rem] border border-accent/10 relative overflow-hidden group/ai">
-                                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover/ai:scale-150 transition-transform duration-1000"></div>
-                                                <div className="flex justify-between items-center relative z-10">
-                                                    <label className="text-[10px] font-black text-accent uppercase tracking-[0.2em] flex items-center gap-2">
-                                                        <Sparkles size={14} className="animate-pulse" /> Kisi-kisi & Indikator Soal
-                                                    </label>
-                                                    <button
-                                                        type="button"
-                                                        onClick={async () => {
-                                                            setIsGeneratingAI('editor');
-                                                            const res = await generateKisiKisiAction(questionText, options.map(o => o.text));
-                                                            if (res.success && res.kisi) {
-                                                                setKisiKisi(res.kisi);
-                                                                alert("Kisi-kisi berhasil di-generate! Jangan lupa klik 'Simpan Mahakarya'.");
-                                                            } else {
-                                                                alert(`Gagal men-generate kisi-kisi: ${res.error || 'Unknown error'}`);
-                                                            }
-                                                            setIsGeneratingAI(null);
-                                                        }}
-                                                        disabled={isGeneratingAI === 'editor' || !questionText}
-                                                        className="bg-accent text-white font-black px-5 py-2 rounded-xl text-[9px] uppercase tracking-widest shadow-lg shadow-accent/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
-                                                    >
-                                                        {isGeneratingAI === 'editor' ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                                                        Generate Otomatis (AI)
-                                                    </button>
+                                                            } as any}
+                                                        />
+                                                    </div>
                                                 </div>
-                                                <div className="relative group z-10">
-                                                    <textarea
-                                                        value={kisiKisi}
-                                                        onChange={(e) => setKisiKisi(e.target.value)}
-                                                        rows={3}
-                                                        className="w-full bg-white/80 border border-accent/20 rounded-2xl p-4 focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none font-bold text-slate-600 transition-all shadow-sm text-[11px] leading-relaxed resize-none"
-                                                        placeholder="Contoh: KD 3.1, Indikator: Peserta didik mampu menganalisis..., Level: L3 (HOTS)"
-                                                    />
+
+                                                <div className="lg:w-[200px] w-full shrink-0 space-y-3">
+                                                    <div className="bg-white/60 backdrop-blur-sm p-4 rounded-[2.5rem] border border-slate-200/60 shadow-sm space-y-4">
+                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block px-2">Sisipan & Simbol</span>
+                                                        <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const input = document.createElement('input');
+                                                                    input.setAttribute('type', 'file');
+                                                                    input.setAttribute('accept', 'image/*');
+                                                                    input.click();
+                                                                    input.onchange = () => {
+                                                                        const file = input.files?.[0];
+                                                                        if (file) {
+                                                                            const reader = new FileReader();
+                                                                            reader.readAsDataURL(file);
+                                                                            reader.onload = () => {
+                                                                                setImageToCrop(reader.result as string);
+                                                                                setCropperContext({ type: 'question' });
+                                                                                setIsCropperOpen(true);
+                                                                            };
+                                                                        }
+                                                                    };
+                                                                }}
+                                                                className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all border border-slate-100/50 bg-slate-50/50 group"
+                                                            >
+                                                                <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform shadow-sm">
+                                                                    <ImageIcon size={16} />
+                                                                </div>
+                                                                <span className="text-[10px] font-black uppercase tracking-wider">Gambar</span>
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsEquationBuilderOpen(true)}
+                                                                className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all border border-slate-100/50 bg-slate-50/50 group"
+                                                            >
+                                                                <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform shadow-sm font-serif font-black italic">
+                                                                    f<sub className="text-[8px] mb-1">x</sub>
+                                                                </div>
+                                                                <span className="text-[10px] font-black uppercase tracking-wider">Rumus</span>
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsTableConfigOpen(true)}
+                                                                className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all border border-slate-100/50 bg-slate-50/50 group"
+                                                            >
+                                                                <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform shadow-sm">
+                                                                    <Layout size={16} />
+                                                                </div>
+                                                                <span className="text-[10px] font-black uppercase tracking-wider">Tabel</span>
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsSymbolPickerOpen(true)}
+                                                                className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white hover:shadow-md hover:scale-[1.02] text-slate-600 transition-all border border-slate-100/50 bg-slate-50/50 group"
+                                                            >
+                                                                <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform shadow-sm">
+                                                                    <Sparkles size={16} />
+                                                                </div>
+                                                                <span className="text-[10px] font-black uppercase tracking-wider">Simbol</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1595,20 +1843,12 @@ export default function BankDetailPage() {
                                         {(['mcq', 'mcq_complex', 'true_false', 'matching', 'categorization', 'short_answer'].includes(selectedType)) && (
                                             <div className="space-y-5">
                                                 <div className="flex justify-between items-center bg-white/50 p-3 rounded-xl">
-                                                    <h4 className="text-[9px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
-                                                        <ListChecks size={14} className="text-primary" />
-                                                        {selectedType === 'matching' ? 'Pasangan Item (Matching)' :
-                                                            selectedType === 'short_answer' ? 'Konfigurasi Kunci Jawaban' :
+                                                    {selectedType !== 'matching' && (
+                                                        <h4 className="text-[9px] font-black text-slate-900 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                            <ListChecks size={14} className="text-primary" />
+                                                            {selectedType === 'short_answer' ? 'Konfigurasi Kunci Jawaban' :
                                                                 selectedType === 'categorization' ? 'Item & Kategori' : 'Opsi Jawaban'}
-                                                    </h4>
-                                                    {selectedType !== 'true_false' && selectedType !== 'short_answer' && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={addOption}
-                                                            className="text-[9px] font-black text-white bg-primary hover:bg-primary-light px-5 py-2.5 rounded-xl shadow-lg shadow-primary/20 transition-all flex items-center gap-2 uppercase tracking-widest"
-                                                        >
-                                                            <Plus size={14} strokeWidth={3} /> {selectedType === 'matching' ? 'Tambah Baris' : 'Tambah Item'}
-                                                        </button>
+                                                        </h4>
                                                     )}
                                                 </div>
 
@@ -1723,41 +1963,27 @@ export default function BankDetailPage() {
                                                 <div className="grid grid-cols-1 gap-4">
                                                     {selectedType === 'matching' ? (
                                                         <div className="space-y-6 animate-in fade-in zoom-in duration-700">
-                                                            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 mb-12 border-b border-slate-100 pb-8">
-                                                                <div>
-                                                                    <h3 className="text-2xl font-black text-primary tracking-tighter uppercase flex items-center gap-3">
-                                                                        <Sparkles className="text-accent animate-pulse" /> Studio Penjodohan <span className="text-[10px] font-black bg-primary/5 px-3 py-1 rounded-full text-primary/40 not-italic tracking-widest ml-2 border border-primary/5">PRO</span>
-                                                                    </h3>
-                                                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">Arsitektur Penjodohan Interaktif</p>
-                                                                </div>
-                                                                <div className="flex flex-wrap justify-center gap-4">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={addOption}
-                                                                        className="bg-slate-50 hover:bg-slate-100 text-primary border border-slate-200 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-sm"
-                                                                    >
-                                                                        <Plus size={14} className="text-accent" /> Tambah Baris Kiri
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const item = prompt('Nama Item Kolom Kanan:');
-                                                                            if (item && !(metadata.right_items || []).includes(item)) {
-                                                                                setMetadata({ ...metadata, right_items: [...(metadata.right_items || []), item] });
-                                                                            }
-                                                                        }}
-                                                                        className="bg-primary hover:bg-primary-light text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2 shadow-xl shadow-primary/20"
-                                                                    >
-                                                                        <Zap size={14} className="text-accent" /> Tambah Item Kanan
-                                                                    </button>
+                                                            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-6 mb-10 py-4 border-b border-slate-100">
+                                                                <div className="relative z-10 text-center md:text-left">
+                                                                    <div className="flex items-center justify-center md:justify-start gap-3">
+                                                                        <div className="bg-primary/5 p-2 rounded-lg">
+                                                                            <ListChecks size={18} className="text-primary" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <h3 className="text-sm font-black text-slate-800 tracking-tight uppercase leading-none">
+                                                                                Editor Penjodohan
+                                                                            </h3>
+                                                                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Atur korelasi data kiri dan kanan</p>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
                                                             <div ref={editorMatchingContainerRef} className="relative min-h-[500px] px-4">
                                                                 <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-20">
                                                                     <defs>
-                                                                        <marker id="editor-arrowhead-guru" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                                                            <polygon points="0 0, 10 3.5, 0 7" fill="#f8a01b" />
+                                                                        <marker id="editor-arrowhead-guru" markerWidth="4" markerHeight="3" refX="3.5" refY="1.5" orient="auto">
+                                                                            <polygon points="0 0, 4 1.5, 0 3" fill="#94a3b8" />
                                                                         </marker>
                                                                     </defs>
                                                                     {editorMatchingLinks.map((link, i) => (
@@ -1766,18 +1992,16 @@ export default function BankDetailPage() {
                                                                             initial={{ pathLength: 0, opacity: 0 }}
                                                                             animate={{ pathLength: 1, opacity: 1 }}
                                                                             x1={link.x1} y1={link.y1} x2={link.x2} y2={link.y2}
-                                                                            stroke="#f8a01b" strokeWidth="2.5" markerEnd="url(#editor-arrowhead-guru)"
-                                                                            strokeDasharray="5,5"
-                                                                            className="drop-shadow-[0_0_8px_rgba(248,160,27,0.5)]"
+                                                                            stroke="#94a3b8" strokeWidth="1.2" markerEnd="url(#editor-arrowhead-guru)"
                                                                         />
                                                                     ))}
                                                                 </svg>
 
-                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-20 md:gap-40 relative z-30">
+                                                                <div className="grid grid-cols-2 gap-4 md:gap-24 relative z-30">
                                                                     <div className="space-y-6">
                                                                         <div className="flex items-center gap-3 px-6 mb-8 text-slate-400">
                                                                             <div className="w-8 h-[1px] bg-slate-200" />
-                                                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Baris Soal (Kiri)</span>
+                                                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Baris Soal</span>
                                                                         </div>
                                                                         {options.map((opt, idx) => (
                                                                             <motion.div
@@ -1787,10 +2011,10 @@ export default function BankDetailPage() {
                                                                                 transition={{ delay: idx * 0.1 }}
                                                                                 id={`editor-matching-left-${idx}`}
                                                                                 onClick={() => setSelectedLeft(selectedLeft === String(idx) ? null : String(idx))}
-                                                                                className={`group relative bg-white border border-slate-100 p-6 rounded-[2rem] transition-all cursor-pointer hover:border-primary/30 hover:shadow-xl ${selectedLeft === String(idx) ? 'border-primary ring-4 ring-primary/5 scale-[1.02] z-40' : ''}`}
+                                                                                className={`group relative bg-white/60 backdrop-blur-sm border p-3 md:p-4 rounded-xl transition-all cursor-pointer hover:bg-slate-50 ${selectedLeft === String(idx) ? 'border-slate-400 shadow-sm z-40' : 'border-slate-200'}`}
                                                                             >
                                                                                 <div className="flex items-center gap-4">
-                                                                                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black transition-all ${selectedLeft === String(idx) ? 'bg-primary text-white rotate-6' : 'bg-slate-50 text-slate-400'}`}>
+                                                                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[11px] transition-all shadow-sm ${selectedLeft === String(idx) ? 'bg-slate-800 text-white' : 'bg-white text-slate-500 border border-slate-200 group-hover:border-slate-300'}`}>
                                                                                         {idx + 1}
                                                                                     </div>
                                                                                     <div className="flex-1 space-y-2">
@@ -1800,39 +2024,10 @@ export default function BankDetailPage() {
                                                                                                 onClick={(e) => e.stopPropagation()}
                                                                                                 onChange={(e) => updateOption(idx, { text: e.target.value })}
                                                                                                 placeholder="Tulis pernyataan..."
-                                                                                                className="flex-1 bg-transparent border-none text-slate-700 font-bold text-sm outline-none placeholder:text-slate-300"
+                                                                                                className="flex-1 bg-transparent border-none text-unelma-navy font-black text-[11px] md:text-[13px] outline-none placeholder:text-slate-300"
                                                                                             />
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    const input = document.createElement('input');
-                                                                                                    input.type = 'file';
-                                                                                                    input.accept = 'image/*';
-                                                                                                    input.onchange = (ev: any) => {
-                                                                                                        const file = ev.target.files[0];
-                                                                                                        if (file) {
-                                                                                                            const reader = new FileReader();
-                                                                                                            reader.onload = (re: any) => {
-                                                                                                                setImageToCrop(re.target.result);
-                                                                                                                setCropperContext({ type: 'option', index: idx });
-                                                                                                                setIsCropperOpen(true);
-                                                                                                            };
-                                                                                                            reader.readAsDataURL(file);
-                                                                                                        }
-                                                                                                    };
-                                                                                                    input.click();
-                                                                                                }}
-                                                                                                className="p-2 text-slate-300 hover:text-primary transition-colors"
-                                                                                            >
-                                                                                                <ImageIcon size={16} />
-                                                                                            </button>
                                                                                         </div>
-                                                                                        <div className="flex flex-wrap gap-2">
-                                                                                            {opt.match_texts?.map((m: string) => (
-                                                                                                <span key={m} className="text-[8px] font-black text-accent bg-accent/10 px-2 py-1 rounded-full uppercase truncate max-w-[100px]">→ {m}</span>
-                                                                                            ))}
-                                                                                        </div>
+
                                                                                     </div>
                                                                                     <button
                                                                                         type="button"
@@ -1842,18 +2037,23 @@ export default function BankDetailPage() {
                                                                                         <Trash2 size={16} />
                                                                                     </button>
                                                                                 </div>
-                                                                                {selectedLeft === String(idx) && (
-                                                                                    <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-primary shadow-lg animate-pulse z-50">
-                                                                                        <ArrowRight size={16} strokeWidth={3} />
-                                                                                    </div>
-                                                                                )}
                                                                             </motion.div>
                                                                         ))}
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={addOption}
+                                                                            className="w-full py-4 border-2 border-dashed border-slate-100 rounded-xl text-slate-300 hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all flex items-center justify-center gap-2 group"
+                                                                        >
+                                                                            <div className="w-8 h-8 rounded-full bg-slate-50 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                                                                                <Plus size={16} />
+                                                                            </div>
+                                                                            <span className="text-[10px] font-black uppercase tracking-widest">Tambah</span>
+                                                                        </button>
                                                                     </div>
 
                                                                     <div className="space-y-6">
                                                                         <div className="flex items-center gap-3 px-6 mb-8 text-slate-400 justify-end">
-                                                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Jawaban (Kanan)</span>
+                                                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Jawaban</span>
                                                                             <div className="w-8 h-[1px] bg-slate-200" />
                                                                         </div>
                                                                         {(metadata.right_items || []).map((rightItem: string) => {
@@ -1873,36 +2073,12 @@ export default function BankDetailPage() {
                                                                                             : [...currentMatches, rightItem];
                                                                                         updateOption(idx, { match_texts: nextMatches });
                                                                                     }}
-                                                                                    className={`group bg-white border border-slate-100 p-6 rounded-[2rem] transition-all cursor-pointer hover:border-primary/30 hover:shadow-xl ${isMatched ? 'border-primary ring-4 ring-primary/5 scale-[1.02]' : ''} ${selectedLeft !== null ? 'hover:scale-[1.02]' : ''}`}
+                                                                                    className={`group bg-white/60 backdrop-blur-sm border p-3 md:p-4 rounded-xl transition-all cursor-pointer hover:bg-slate-50 relative ${isMatched ? 'border-slate-400 shadow-sm' : 'border-slate-200'} ${selectedLeft !== null && !isMatched ? 'hover:border-slate-300' : ''}`}
                                                                                 >
                                                                                     <div className="flex items-center gap-4">
                                                                                         <div className="flex-1 space-y-2">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <button
-                                                                                                    type="button"
-                                                                                                    onClick={(e) => {
-                                                                                                        e.stopPropagation();
-                                                                                                        const input = document.createElement('input');
-                                                                                                        input.type = 'file';
-                                                                                                        input.accept = 'image/*';
-                                                                                                        input.onchange = (ev: any) => {
-                                                                                                            const file = ev.target.files[0];
-                                                                                                            if (file) {
-                                                                                                                const reader = new FileReader();
-                                                                                                                reader.onload = (re: any) => {
-                                                                                                                    setImageToCrop(re.target.result);
-                                                                                                                    setCropperContext({ type: 'matching_right', item: rightItem });
-                                                                                                                    setIsCropperOpen(true);
-                                                                                                                };
-                                                                                                                reader.readAsDataURL(file);
-                                                                                                            }
-                                                                                                        };
-                                                                                                        input.click();
-                                                                                                    }}
-                                                                                                    className="p-2 text-slate-300 hover:text-primary transition-colors"
-                                                                                                >
-                                                                                                    <ImageIcon size={16} />
-                                                                                                </button>
+                                                                                            <div className="flex items-center gap-3">
+                                                                                                {isMatched && <Check size={16} className="text-slate-800" strokeWidth={3} />}
                                                                                                 <input
                                                                                                     value={rightItem}
                                                                                                     onClick={(e) => e.stopPropagation()}
@@ -1916,31 +2092,9 @@ export default function BankDetailPage() {
                                                                                                             match_texts: (o.match_texts || []).map((m: string) => m === oldVal ? newVal : m)
                                                                                                         })));
                                                                                                     }}
-                                                                                                    className="flex-1 bg-transparent border-none text-slate-700 font-bold text-sm outline-none placeholder:text-slate-300 text-right"
+                                                                                                    className="flex-1 bg-transparent border-none text-unelma-navy font-bold text-[11px] md:text-[13px] outline-none placeholder:text-slate-300 text-right"
                                                                                                 />
-                                                                                                {/* EDIT IMAGE ICON */}
-                                                                                                {(() => {
-                                                                                                    const match = rightItem.match(/<img.*?src=["'](.*?)["'].*?>/i);
-                                                                                                    return match ? (
-                                                                                                        <button
-                                                                                                            type="button"
-                                                                                                            onClick={(e) => {
-                                                                                                                e.stopPropagation();
-                                                                                                                setImageToCrop(match[1]);
-                                                                                                                setCropperContext({ type: 'matching_replace', item: rightItem });
-                                                                                                                setIsCropperOpen(true);
-                                                                                                            }}
-                                                                                                            className="p-2 text-amber-500 hover:text-amber-600 transition-colors bg-amber-50 rounded-lg border border-amber-100"
-                                                                                                            title="Edit Gambar"
-                                                                                                        >
-                                                                                                            <Crop size={14} />
-                                                                                                        </button>
-                                                                                                    ) : null;
-                                                                                                })()}
                                                                                             </div>
-                                                                                        </div>
-                                                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isMatched ? 'bg-primary text-white shadow-lg' : 'bg-slate-50 text-slate-300'}`}>
-                                                                                            {isMatched ? <Check size={16} strokeWidth={4} /> : <Zap size={14} />}
                                                                                         </div>
                                                                                         <button
                                                                                             type="button"
@@ -1961,164 +2115,222 @@ export default function BankDetailPage() {
                                                                                 </motion.div>
                                                                             );
                                                                         })}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="mt-12 flex justify-center">
-                                                                <div className="bg-slate-50 rounded-full px-8 py-4 border border-slate-100 flex items-center gap-6 shadow-sm">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-                                                                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">Penjodohan Aktif</span>
-                                                                    </div>
-                                                                    <div className="w-[1px] h-4 bg-slate-200" />
-                                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Klik butir di kiri, lalu hubungkan ke jawaban di kanan.</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ) : (selectedType === 'short_answer' || selectedType === 'essay') ? null : options.map((opt, idx) => (
-                                                        <motion.div
-                                                            key={idx}
-                                                            initial={{ opacity: 0, x: -10 }}
-                                                            animate={{ opacity: 1, x: 0 }}
-                                                            className={`p-5 rounded-2xl border transition-all ${opt.isCorrect ? 'bg-primary/5 border-primary ring-1 ring-primary/20' : 'bg-white border-slate-100 shadow-sm'}`}
-                                                        >
-                                                            <div className="flex gap-5 items-start">
-                                                                {/* Type-based Action Icon */}
-                                                                {selectedType === 'mcq' || selectedType === 'mcq_complex' ? (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => {
-                                                                            const newOptions = [...options];
-                                                                            newOptions[idx].isCorrect = !newOptions[idx].isCorrect;
-                                                                            const correctCount = newOptions.filter(o => o.isCorrect).length;
-                                                                            if (correctCount > 1) setSelectedType('mcq_complex');
-                                                                            else setSelectedType('mcq');
-                                                                            setOptions(newOptions);
-                                                                        }}
-                                                                        className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center transition-all ${opt.isCorrect ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' : 'bg-slate-100 text-slate-300 hover:bg-slate-200'}`}
-                                                                    >
-                                                                        <Check size={18} strokeWidth={4} />
-                                                                    </button>
-                                                                ) : selectedType === 'true_false' ? (
-                                                                    <div className="flex flex-col gap-1 items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => updateOption(idx, { isCorrect: true })}
-                                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${opt.isCorrect ? 'bg-green-500 text-white shadow-md' : 'text-slate-400 hover:text-primary'}`}
-                                                                        >
-                                                                            B
-                                                                        </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => updateOption(idx, { isCorrect: false })}
-                                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!opt.isCorrect ? 'bg-rose-500 text-white shadow-md' : 'text-slate-400 hover:text-primary'}`}
-                                                                        >
-                                                                            S
-                                                                        </button>
-                                                                    </div>
-                                                                ) : selectedType === 'categorization' ? (
-                                                                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black">
-                                                                        {idx + 1}
-                                                                    </div>
-                                                                ) : null}
-
-                                                                <div className="flex-1 space-y-4">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                                                                            {selectedType === 'categorization' ? 'Redaksi Item Soal' : `Opsi ${String.fromCharCode(65 + idx)}`}
-                                                                        </span>
-                                                                        {opt.isCorrect && (selectedType === 'mcq' || selectedType === 'mcq_complex') && (
-                                                                            <span className="text-[8px] font-black text-primary uppercase bg-primary/10 px-2 py-0.5 rounded">Kunci Jawaban</span>
-                                                                        )}
-                                                                    </div>
-
-                                                                    {/* Core Input */}
-                                                                    <div className="flex items-center gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => {
-                                                                                const input = document.createElement('input');
-                                                                                input.type = 'file';
-                                                                                input.accept = 'image/*';
-                                                                                input.onchange = (e: any) => {
-                                                                                    const file = e.target.files[0];
-                                                                                    if (file) {
-                                                                                        const reader = new FileReader();
-                                                                                        reader.onload = (re: any) => {
-                                                                                            setImageToCrop(re.target.result);
-                                                                                            setCropperContext({ type: 'option', index: idx });
-                                                                                            setIsCropperOpen(true);
-                                                                                        };
-                                                                                        reader.readAsDataURL(file);
-                                                                                    }
-                                                                                };
-                                                                                input.click();
+                                                                                const item = prompt('Nama Item Kolom Kanan:');
+                                                                                if (item && !(metadata.right_items || []).includes(item)) {
+                                                                                    setMetadata({ ...metadata, right_items: [...(metadata.right_items || []), item] });
+                                                                                }
                                                                             }}
-                                                                            className="p-2 text-slate-300 hover:text-primary transition-colors bg-white rounded-lg shadow-sm border border-slate-100"
+                                                                            className="w-full py-4 border-2 border-dashed border-slate-100 rounded-xl text-slate-300 hover:border-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2 group"
                                                                         >
-                                                                            <ImageIcon size={16} />
-                                                                        </button>
-                                                                        <input
-                                                                            required
-                                                                            placeholder={"Tulis teks atau sisipkan gambar..."}
-                                                                            value={opt.text}
-                                                                            onChange={(e) => updateOption(idx, { text: e.target.value })}
-                                                                            className="flex-1 bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-200"
-                                                                        />
-
-                                                                        {/* EDIT IMAGE ICON */}
-                                                                        {(() => {
-                                                                            const match = opt.text.match(/<img.*?src=["'](.*?)["'].*?>/i);
-                                                                            return match ? (
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={() => {
-                                                                                        setImageToCrop(match[1]);
-                                                                                        setCropperContext({ type: 'option_replace', index: idx });
-                                                                                        setIsCropperOpen(true);
-                                                                                    }}
-                                                                                    className="p-2 text-amber-500 hover:text-amber-600 transition-colors bg-amber-50 rounded-lg border border-amber-100"
-                                                                                    title="Edit Gambar"
-                                                                                >
-                                                                                    <Crop size={14} />
-                                                                                </button>
-                                                                            ) : null;
-                                                                        })()}
-
-                                                                        {selectedType === 'categorization' && (
-                                                                            <div className="flex flex-wrap gap-2 animate-in slide-in-from-left-2 duration-300">
-                                                                                {categories.map(cat => (
-                                                                                    <button
-                                                                                        key={cat}
-                                                                                        type="button"
-                                                                                        onClick={() => {
-                                                                                            const current = opt.category_names || [];
-                                                                                            const next = current.includes(cat)
-                                                                                                ? current.filter((c: string) => c !== cat)
-                                                                                                : [...current, cat];
-                                                                                            updateOption(idx, { category_names: next });
-                                                                                        }}
-                                                                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all ${opt.category_names?.includes(cat) ? 'bg-primary text-white border-primary shadow-md' : 'bg-white border-slate-100 text-slate-400 hover:border-primary/30'}`}
-                                                                                    >
-                                                                                        {opt.category_names?.includes(cat) && <Check size={10} strokeWidth={4} />}
-                                                                                        {cat}
-                                                                                    </button>
-                                                                                ))}
+                                                                            <div className="w-8 h-8 rounded-full bg-slate-50 group-hover:bg-slate-200 flex items-center justify-center transition-colors">
+                                                                                <Plus size={16} />
                                                                             </div>
-                                                                        )}
-
-                                                                        <button type="button" onClick={() => removeOption(idx)} className="text-slate-200 hover:text-rose-500 p-2 transition-colors">
-                                                                            <Trash2 size={16} />
+                                                                            <span className="text-[10px] font-black uppercase tracking-widest">Tambah</span>
                                                                         </button>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </motion.div>
-                                                    ))}
+                                                        </div>
+                                                    ) : (selectedType === 'short_answer' || selectedType === 'essay') ? null : (
+                                                        <div className="space-y-4">
+                                                            {options.map((opt, idx) => (
+                                                                <motion.div
+                                                                    key={idx}
+                                                                    initial={{ opacity: 0, x: -10 }}
+                                                                    animate={{ opacity: 1, x: 0 }}
+                                                                    className={`p-5 rounded-2xl border transition-all ${opt.isCorrect ? 'bg-primary/5 border-primary ring-1 ring-primary/20' : 'bg-white border-slate-100 shadow-sm'}`}
+                                                                >
+                                                                    <div className="flex gap-5 items-start">
+                                                                        {/* Type-based Action Icon */}
+                                                                        {selectedType === 'mcq' || selectedType === 'mcq_complex' ? (
+                                                                            <div className="flex flex-col gap-2 items-center">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                                                    Opsi {String.fromCharCode(65 + idx)}
+                                                                                </span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        const newOptions = [...options];
+                                                                                        newOptions[idx].isCorrect = !newOptions[idx].isCorrect;
+                                                                                        const correctCount = newOptions.filter(o => o.isCorrect).length;
+                                                                                        if (correctCount > 1) setSelectedType('mcq_complex');
+                                                                                        else setSelectedType('mcq');
+                                                                                        setOptions(newOptions);
+                                                                                    }}
+                                                                                    className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center transition-all ${opt.isCorrect ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' : 'bg-slate-100 text-slate-300 hover:bg-slate-200'}`}
+                                                                                >
+                                                                                    <Check size={18} strokeWidth={4} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : selectedType === 'true_false' ? (
+                                                                            <div className="flex flex-col gap-2 items-center">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                                                    Opsi {String.fromCharCode(65 + idx)}
+                                                                                </span>
+                                                                                <div className="flex flex-col gap-1 items-center bg-slate-200/50 p-1.5 rounded-xl border border-slate-200">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => updateOption(idx, { isCorrect: true })}
+                                                                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${opt.isCorrect ? 'bg-green-500 text-white shadow-md' : 'text-slate-400 hover:text-primary'}`}
+                                                                                    >
+                                                                                        B
+                                                                                    </button>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onClick={() => updateOption(idx, { isCorrect: false })}
+                                                                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!opt.isCorrect ? 'bg-rose-500 text-white shadow-md' : 'text-slate-400 hover:text-primary'}`}
+                                                                                    >
+                                                                                        S
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : selectedType === 'categorization' ? (
+                                                                            <div className="flex flex-col gap-2 items-center">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                                                    Item {idx + 1}
+                                                                                </span>
+                                                                                <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-black">
+                                                                                    {idx + 1}
+                                                                                </div>
+                                                                            </div>
+                                                                        ) : null}
+
+                                                                        <div className="flex-1 space-y-4">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                                                                    {selectedType === 'categorization' ? 'Redaksi Item Soal' : selectedType === 'true_false' ? 'Pernyataan Soal' : ''}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            <div className="flex items-center gap-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        const input = document.createElement('input');
+                                                                                        input.type = 'file';
+                                                                                        input.accept = 'image/*';
+                                                                                        input.onchange = (e: any) => {
+                                                                                            const file = e.target.files[0];
+                                                                                            if (file) {
+                                                                                                const reader = new FileReader();
+                                                                                                reader.onload = () => {
+                                                                                                    setImageToCrop(reader.result as string);
+                                                                                                    setCropperContext({ type: 'option_replace', index: idx });
+                                                                                                    setIsCropperOpen(true);
+                                                                                                };
+                                                                                                reader.readAsDataURL(file);
+                                                                                            }
+                                                                                        };
+                                                                                        input.click();
+                                                                                    }}
+                                                                                    className="w-10 h-10 bg-white border border-slate-200 rounded-lg flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary transition-all flex-shrink-0"
+                                                                                >
+                                                                                    <ImageIcon size={18} />
+                                                                                </button>
+                                                                                <input
+                                                                                    value={opt.text}
+                                                                                    onChange={(e) => updateOption(idx, { text: e.target.value })}
+                                                                                    placeholder="Tulis opsi jawaban di sini..."
+                                                                                    className="flex-1 bg-transparent border-none outline-none font-bold text-slate-600 placeholder:text-slate-300 text-[11pt]"
+                                                                                />
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => removeOption(idx)}
+                                                                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                                                                                >
+                                                                                    <Trash2 size={16} />
+                                                                                </button>
+                                                                            </div>
+
+                                                                            {selectedType === 'categorization' && (
+                                                                                <div className="flex flex-wrap gap-2 animate-in slide-in-from-left-2 duration-300">
+                                                                                    {categories.map(cat => (
+                                                                                        <button
+                                                                                            key={cat}
+                                                                                            type="button"
+                                                                                            onClick={() => {
+                                                                                                const current = opt.category_names || [];
+                                                                                                const next = current.includes(cat)
+                                                                                                    ? current.filter((c: string) => c !== cat)
+                                                                                                    : [...current, cat];
+                                                                                                updateOption(idx, { category_names: next });
+                                                                                            }}
+                                                                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[10px] font-bold transition-all ${opt.category_names?.includes(cat) ? 'bg-primary text-white border-primary shadow-md' : 'bg-white border-slate-100 text-slate-400 hover:border-primary/30'}`}
+                                                                                        >
+                                                                                            {opt.category_names?.includes(cat) && <Check size={10} strokeWidth={4} />}
+                                                                                            {cat}
+                                                                                        </button>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </motion.div>
+                                                            ))}
+
+                                                            {selectedType !== 'true_false' && (
+                                                                <div className="flex justify-start">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={addOption}
+                                                                        className="px-8 py-4 border-2 border-dashed border-slate-100 rounded-[2rem] text-slate-300 hover:border-primary/30 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-3 group"
+                                                                    >
+                                                                        <div className="w-10 h-10 rounded-full bg-slate-50 group-hover:bg-primary/10 flex items-center justify-center transition-all group-hover:scale-110 shadow-sm">
+                                                                            <Plus size={20} strokeWidth={3} />
+                                                                        </div>
+                                                                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Tambah Item / Opsi Baru</span>
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
                                                 </div>
                                             </div>
                                         )}
+
+                                        <div className="mt-12 space-y-8 pt-10 border-t border-slate-100/50">
+
+                                            <div className="space-y-4 bg-accent/5 p-6 rounded-[2.5rem] border border-accent/10 relative overflow-hidden group/ai">
+                                                <div className="absolute top-0 right-0 w-32 h-32 bg-accent/10 rounded-full blur-3xl -mr-16 -mt-16 group-hover/ai:scale-150 transition-transform duration-1000"></div>
+                                                <div className="flex justify-between items-center relative z-10">
+                                                    <label className="text-[10px] font-black text-accent uppercase tracking-[0.2em] flex items-center gap-2">
+                                                        <Sparkles size={14} className="animate-pulse" /> Kisi-kisi & Indikator Soal
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            setIsGeneratingAI('editor');
+                                                            const res = await generateKisiKisiAction(questionText, options.map(o => o.text));
+                                                            if (res.success && res.kisi) {
+                                                                setKisiKisi(res.kisi);
+                                                                alert("Kisi-kisi berhasil di-generate! Jangan lupa klik 'Simpan'.");
+                                                            } else {
+                                                                alert(`Gagal men-generate kisi-kisi: ${res.error || 'Unknown error'}`);
+                                                            }
+                                                            setIsGeneratingAI(null);
+                                                        }}
+                                                        disabled={isGeneratingAI === 'editor' || !questionText}
+                                                        className="bg-accent text-white font-black px-5 py-2 rounded-xl text-[9px] uppercase tracking-widest shadow-lg shadow-accent/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        {isGeneratingAI === 'editor' ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                                        Generate Otomatis (AI)
+                                                    </button>
+                                                </div>
+                                                <div className="relative group z-10">
+                                                    <textarea
+                                                        value={kisiKisi}
+                                                        onChange={(e) => setKisiKisi(e.target.value)}
+                                                        rows={3}
+                                                        className="w-full bg-white/80 border border-accent/20 rounded-2xl p-4 focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none font-bold text-slate-600 transition-all shadow-sm text-[11px] leading-relaxed resize-none"
+                                                        placeholder="Contoh: KD 3.1, Indikator: Peserta didik mampu menganalisis..., Level: L3 (HOTS)"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </form>
                                 </div>
                             </div>
@@ -2405,26 +2617,18 @@ export default function BankDetailPage() {
 
                                                             <div className="grid grid-cols-2 gap-2 mb-6 overflow-y-auto pr-1 custom-scrollbar shrink min-h-0">
                                                                 {filteredQuestions.map((q, i) => {
-                                                                    const isAnswered = !!matchingAnswers[q.id];
                                                                     const isCurrent = currentPreviewIndex === i;
-                                                                    const isDoubtful = doubtfulPreviews.has(q.id);
-                                                                    const score = isSimulating ? calculateScore(q, matchingAnswers[q.id]) : 0;
-                                                                    const isCorrect = isSimulating && score === (q.score_default || 1);
-                                                                    const isPartial = isSimulating && score > 0 && score < (q.score_default || 1);
-
+                                                                    const isAnswered = matchingAnswers[q.id] !== undefined && matchingAnswers[q.id] !== null && String(matchingAnswers[q.id]).length > 0 && matchingAnswers[q.id] !== '{}';
                                                                     let btnClass = "w-full aspect-square rounded-xl flex items-center justify-center font-black text-[13px] transition-all duration-300 border-2 relative group ";
-                                                                    if (isCurrent) btnClass += "bg-[#030c4d] text-white border-[#030c4d] shadow-lg shadow-[#030c4d]/20 scale-105 z-10 ring-2 ring-[#030c4d]/10";
-                                                                    else if (isSimulating) {
-                                                                        if (isCorrect) btnClass += "bg-emerald-500 text-white border-emerald-500 shadow-md hover:scale-105 ";
-                                                                        else if (isPartial) btnClass += "bg-amber-500 text-white border-amber-500 shadow-md hover:scale-105 ";
-                                                                        else if (isAnswered) btnClass += "bg-rose-500 text-white border-rose-500 shadow-md hover:scale-105 ";
-                                                                        else btnClass += "bg-slate-50 text-slate-300 border-slate-100 ";
-                                                                    } else if (isDoubtful) {
-                                                                        btnClass += "bg-[#f8a01b] text-white border-[#f8a01b] shadow-md hover:bg-[#e08e15]";
+
+                                                                    if (isCurrent && !viewingQuestion) {
+                                                                        btnClass += "bg-[#030c4d] text-white border-[#030c4d] shadow-lg shadow-[#030c4d]/20 scale-105 z-10 ring-2 ring-[#030c4d]/10";
+                                                                    } else if (doubtfulPreviews.has(q.id)) {
+                                                                        btnClass += "bg-[#f8a01b] text-white border-[#f8a01b] shadow-md shadow-[#f8a01b]/20 hover:scale-105";
                                                                     } else if (isAnswered) {
-                                                                        btnClass += "bg-blue-50/80 text-[#030c4d] border-blue-100/50 shadow-sm hover:bg-blue-100";
+                                                                        btnClass += "bg-blue-50 text-[#030c4d] border-blue-100 shadow-sm hover:bg-blue-100";
                                                                     } else {
-                                                                        btnClass += "bg-slate-50 text-slate-400 border-slate-100 hover:border-primary/20 hover:bg-white hover:text-primary";
+                                                                        btnClass += "bg-slate-100 text-slate-400 border-slate-200 hover:border-slate-300 hover:bg-slate-200/50";
                                                                     }
 
                                                                     return (

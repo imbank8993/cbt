@@ -69,3 +69,46 @@ export async function deleteExamAction(examId: string) {
         return { success: false, error: error.message };
     }
 }
+/**
+ * Get Real Stats for Admin Dashboard
+ */
+export async function getAdminStatsAction() {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    try {
+        // 1. Get Active Organizations Count (Filtering by is_active)
+        const { count: orgCount, error: orgError } = await supabaseAdmin
+            .from('organizations')
+            .select('id', { count: 'exact', head: true })
+            .eq('is_active', true);
+
+        if (orgError) {
+            console.error('Admin Stats: Org count error', orgError);
+            throw orgError;
+        }
+
+        // 2. Get Total Students Count Across All Organizations
+        // We filter member_roles by the 'Siswa' role name (case-insensitive)
+        const { count: studentCount, error: studentError } = await supabaseAdmin
+            .from('member_roles')
+            .select('id, roles!inner(name)', { count: 'exact', head: true })
+            .ilike('roles.name', 'Siswa');
+
+        if (studentError) {
+            console.error('Admin Stats: Student count error', studentError);
+        }
+
+        console.log('Admin Dashboard Stats Fetched:', { orgCount, studentCount });
+
+        return {
+            success: true,
+            data: {
+                activeOrgs: orgCount || 0,
+                totalStudents: studentCount || 0
+            }
+        };
+    } catch (error: any) {
+        console.error('Admin: Get stats error:', error);
+        return { success: false, error: error.message };
+    }
+}

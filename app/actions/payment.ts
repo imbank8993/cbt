@@ -78,3 +78,16 @@ export async function createTransactionAction(
         return { success: false, error: error.message };
     }
 }
+export async function getTransactionsAction() {
+    try {
+        const { data, error } = await supabase
+            .from('unelma_transactions')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return { success: true, transactions: data };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

@@ -32,28 +32,45 @@ interface SidebarItemProps {
 }
 
 const SidebarItem = ({ icon: Icon, label, href, isActive, isCollapsed }: SidebarItemProps) => (
-    <Link href={href}>
+    <Link href={href} className="relative block group">
+        {/* Subtle Indicator on the left */}
+        {isActive && !isCollapsed && (
+            <motion.div
+                layoutId="active-indicator-ultra"
+                className="absolute left-[-24px] top-1/2 -translate-y-1/2 w-1.5 h-6 bg-unelma-navy rounded-full"
+            />
+        )}
+
         <motion.div
-            whileHover={{ x: isCollapsed ? 0 : 5, scale: isCollapsed ? 1.05 : 1 }}
+            whileHover={{ x: isCollapsed ? 0 : 4 }}
             whileTap={{ scale: 0.98 }}
-            className={`group flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-3 rounded-xl transition-all duration-300 ${isActive
-                ? 'bg-primary text-white shadow-xl shadow-primary/20'
-                : 'text-slate-500 hover:text-primary hover:bg-slate-50'
+            className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} px-4 py-3.5 rounded-2xl transition-all duration-500 relative ${isActive
+                ? 'bg-white text-unelma-navy shadow-[0_10px_25px_-5px_rgba(3,12,77,0.08)] border border-slate-100'
+                : 'text-slate-400 hover:text-unelma-navy hover:bg-white/50'
                 }`}
         >
-            <div className="flex items-center gap-3.5">
-                <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-primary transition-colors'} strokeWidth={2.5} />
+            <div className="flex items-center gap-4 relative z-10">
+                <div className={`transition-all duration-300 ${isActive ? 'text-unelma-orange' : 'group-hover:text-unelma-navy'}`}>
+                    <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
+                </div>
                 {!isCollapsed && (
                     <motion.span
                         initial={{ opacity: 0, x: -5 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="font-bold tracking-tight text-[12px] uppercase whitespace-nowrap"
+                        className={`font-black tracking-widest text-[10px] uppercase whitespace-nowrap ${isActive ? 'text-unelma-navy' : 'text-slate-500'}`}
                     >
                         {label}
                     </motion.span>
                 )}
             </div>
-            {!isCollapsed && isActive && <motion.div layoutId="active-indicator" className="w-1 h-1 bg-white rounded-full shadow-sm" />}
+
+            {/* Subtle glow dot for active */}
+            {!isCollapsed && isActive && (
+                <motion.div
+                    layoutId="active-dot-ultra"
+                    className="ml-auto w-1.5 h-1.5 bg-unelma-orange rounded-full shadow-[0_0_8px_rgba(255,165,0,0.5)] z-10"
+                />
+            )}
         </motion.div>
     </Link>
 );
@@ -207,73 +224,73 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isOpen, setIsOpen }: SidebarProp
             <motion.aside
                 initial={false}
                 animate={{
-                    width: isCollapsed ? 96 : 288,
-                    x: (isOpen || !isMobile) ? 0 : -300
+                    width: isCollapsed ? 96 : 300,
+                    x: (isOpen || !isMobile) ? 0 : -320
                 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className={`h-screen bg-white border-r border-slate-100 p-6 flex flex-col fixed left-0 top-0 z-50 shadow-sm overflow-hidden lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                className={`h-screen bg-slate-50/80 backdrop-blur-2xl border-r border-slate-200/50 p-6 flex flex-col fixed left-0 top-0 z-50 shadow-[5px_0_30px_-15px_rgba(0,0,0,0.02)] overflow-hidden lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
             >
-                {/* Toggle Button - Only Desktop */}
-                <button
-                    suppressHydrationWarning
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    className={`absolute top-8 ${isCollapsed ? 'right-1/2 translate-x-1/2' : 'right-4'} w-8 h-8 bg-white border border-slate-100 text-primary rounded-full hidden lg:flex items-center justify-center shadow-premium hover:scale-110 active:scale-90 transition-all z-40`}
-                >
-                    {isCollapsed ? <ChevronRight size={16} strokeWidth={3} /> : <ChevronLeft size={16} strokeWidth={3} />}
-                </button>
 
-                {/* Branding Section */}
-                <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-4'} mb-12 px-1 relative`}>
+                {/* Refined Branding Section - Interactive Toggle */}
+                <div
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-5'} mb-16 px-1 relative group cursor-pointer hover:opacity-80 transition-all`}
+                >
                     <motion.div
-                        animate={{
-                            rotate: [0, 5, -5, 0],
-                            scale: [1, 1.05, 1]
-                        }}
-                        transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                        className="w-12 h-12 bg-white rounded-2xl flex-shrink-0 flex items-center justify-center shadow-2xl shadow-slate-200 relative overflow-hidden border border-slate-100 p-2"
+                        whileHover={{ scale: 1.05, rotate: 5 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-12 h-12 bg-white rounded-[1.25rem] flex-shrink-0 flex items-center justify-center shadow-[0_10px_30px_-5px_rgba(3,12,77,0.15)] relative overflow-hidden border border-slate-100 p-2.5 transition-all"
                     >
-                        <img src="/unelma.png" alt="Unelma Logo" className="w-full h-full object-contain" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-unelma-orange/10 to-transparent group-hover:translate-x-full transition-transform duration-1000" />
+                        <img src="/unelma.png" alt="Unelma Logo" className="w-full h-full object-contain relative z-10" />
                     </motion.div>
+
                     {(!isCollapsed || isMobile) && mounted && (
                         <motion.div
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             className="flex flex-col"
                         >
-                            <h2 className="text-2xl font-black text-[#030c4d] tracking-widest leading-none">Unelma</h2>
-                            <div className="flex items-center gap-1.5 mt-1.5">
-                                <p className="text-[10px] font-black text-unelma-orange leading-none">Computer Based Test</p>
+                            <h2 className="text-2xl font-black text-unelma-navy tracking-tighter leading-none italic uppercase">Unelma</h2>
+                            <div className="flex items-center gap-2 mt-1 whitespace-nowrap overflow-hidden">
+                                <span className="w-4 h-[1px] bg-unelma-orange opacity-40 shrink-0"></span>
+                                <p className="text-[9px] font-black text-slate-400 leading-none uppercase tracking-[0.2em]">Platform CBT</p>
                             </div>
                         </motion.div>
                     )}
                 </div>
 
                 {/* Navigation List */}
-                <nav className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar">
+                <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar -mx-2 px-2 pb-10">
                     {(!isCollapsed || isMobile) && mounted && (
-                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest px-4 mb-4 opacity-50 whitespace-nowrap">Main Navigation</p>
+                        <div className="flex items-center gap-3 px-4 mb-6">
+                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-[0.25em] whitespace-nowrap">Explore</span>
+                            <div className="h-[1px] w-full bg-slate-100"></div>
+                        </div>
                     )}
 
                     {managedOrgData && (!isCollapsed || isMobile) && mounted && (
                         <motion.div
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="mx-4 mb-6 p-4 bg-primary/5 border border-primary/20 rounded-2xl"
+                            className="mx-3 mb-8 p-5 bg-unelma-orange/5 border border-unelma-orange/20 rounded-[1.75rem] relative overflow-hidden group/managed"
                         >
-                            <p className="text-[8px] font-black text-primary uppercase tracking-widest mb-2">Managed Mode</p>
-                            <p className="text-[10px] font-bold text-slate-700 truncate mb-3">{managedOrgData.name}</p>
+                            <div className="absolute top-0 right-0 w-16 h-16 bg-unelma-orange opacity-[0.03] rounded-full blur-xl translate-x-4 -translate-y-4"></div>
+                            <p className="text-[8px] font-black text-unelma-orange uppercase tracking-[0.3em] mb-2 opacity-60">Control Center</p>
+                            <p className="text-[11px] font-bold text-unelma-navy truncate mb-4 pr-2">{managedOrgData.name}</p>
                             <button
                                 onClick={async () => {
                                     await setActiveOrgAction(null);
                                     router.push('/dashboard/admin/orgs');
                                     setManagedOrgData(null);
                                 }}
-                                className="w-full py-2 bg-primary text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-primary-light transition-all shadow-lg shadow-primary/10"
+                                className="w-full py-2.5 bg-unelma-navy text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-unelma-orange hover:text-unelma-navy transition-all shadow-lg active:scale-95"
                             >
-                                Back to Admin
+                                Back to Hub
                             </button>
                         </motion.div>
                     )}
+
                     {menuItems.map((item) => (
                         <SidebarItem
                             key={item.label}
@@ -284,46 +301,54 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isOpen, setIsOpen }: SidebarProp
                     ))}
                 </nav>
 
-                {/* Bottom Section: Profile & Actions */}
-                <div className="mt-auto space-y-6 pt-6 border-t border-slate-50">
+                {/* Bottom Section: Profile Card - Ultra Light */}
+                <div className="mt-auto pt-8 border-t border-slate-200/60 flex flex-col gap-4">
                     {(!isCollapsed || isMobile) && mounted && (
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="p-1 bg-slate-50 border border-slate-100 rounded-[1.75rem]"
+                            className="p-1 px-1.5"
                         >
-                            <div className="flex items-center gap-3 p-4">
-                                <div className="w-10 h-10 bg-white shadow-premium text-primary rounded-xl border border-slate-100 flex items-center justify-center font-black relative overflow-hidden">
-                                    {userData?.profile?.avatar_url ? (
-                                        <img src={userData.profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : userData?.user_metadata?.avatar_url ? (
-                                        <img src={userData.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span>{userData?.profile?.full_name?.charAt(0) || userData?.user_metadata?.full_name?.charAt(0) || role[0]}</span>
-                                    )}
-                                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></div>
-                                </div>
-                                <div className="overflow-hidden">
-                                    <p className="text-[11px] font-black text-primary leading-none mb-1 truncate uppercase">{userData?.profile?.full_name || userData?.user_metadata?.full_name || 'User Access'}</p>
-                                    <p className="text-[9px] text-slate-400 font-bold truncate">{role} - System Online</p>
+                            <div className="group/profile relative p-3.5 bg-white border border-slate-200 rounded-[1.75rem] shadow-sm hover:shadow-md transition-all duration-500 overflow-hidden">
+                                <div className="absolute inset-0 bg-slate-50/50 opacity-0 group-hover/profile:opacity-100 transition-opacity" />
+
+                                <div className="flex items-center gap-4 relative z-10">
+                                    <div className="w-11 h-11 bg-slate-50 shadow-inner text-unelma-navy rounded-2xl border border-slate-100 flex items-center justify-center font-black relative overflow-hidden shrink-0 group-hover/profile:scale-105 transition-transform">
+                                        {userData?.profile?.avatar_url ? (
+                                            <img src={userData.profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : userData?.user_metadata?.avatar_url ? (
+                                            <img src={userData.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full bg-unelma-navy/5 text-unelma-navy flex items-center justify-center text-sm font-black italic">
+                                                {role[0]}
+                                            </div>
+                                        )}
+                                        <div className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                                    </div>
+
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="text-[11px] font-black text-unelma-navy leading-none mb-1.5 truncate uppercase tracking-tight">{userData?.profile?.full_name || userData?.user_metadata?.full_name || 'System Access'}</p>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[8px] font-black text-unelma-orange bg-unelma-orange/10 px-1.5 py-0.5 rounded leading-none uppercase tracking-widest">{role}</span>
+                                            <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Online</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
                     )}
 
-                    <div className="flex flex-col gap-2">
-                        <button
-                            suppressHydrationWarning
-                            onClick={handleSignOut}
-                            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-6 py-4 rounded-2xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all font-black text-[10px] uppercase tracking-widest group`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
-                                {(!isCollapsed || isMobile) && mounted && <span className="whitespace-nowrap">Sign Out Portal</span>}
-                            </div>
-                            {(!isCollapsed || isMobile) && mounted && <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
-                        </button>
-                    </div>
+                    <button
+                        suppressHydrationWarning
+                        onClick={handleSignOut}
+                        className={`group w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} px-5 py-4 rounded-2xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all font-black text-[9px] uppercase tracking-[0.2em] relative overflow-hidden`}
+                    >
+                        <div className="flex items-center gap-4 relative z-10">
+                            <LogOut size={18} className="transition-transform group-hover:-translate-x-1" />
+                            {(!isCollapsed || isMobile) && mounted && <span className="whitespace-nowrap italic text-slate-300">Sign out</span>}
+                        </div>
+                    </button>
                 </div>
             </motion.aside>
         </>
